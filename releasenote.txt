@@ -1,0 +1,98 @@
+————————————————————————————————————————————————————————
+Version: V1.0.02 
+Data: 20160330
+Description: first commit
+Releasenote:
+	1: Support  Alink  smart cloud access, to achieve the alink smart wifi device based on ESP8266.
+	2: Support equipment OTA
+	3: Demo project includes the smartswitch, smartplug, PWM dimming,  UART protocol control device example code, available for real products.
+————————————————————————————————————————————————————————
+1：本工程基于 ESP8266 IOT芯片方案 ESP8266_RTOS_SDK 软件进行开发，ESP8266_RTOS_SDK_ALINK 为对应的SDK，内含alink定制库，客户在使用时，直接通过 gen_misc.sh 脚本编译即可，SDK的路径已经指定好了。
+    ESP8266快速使用入门可见论坛：http://bbs.espressif.com/ 
+    乐鑫官方网站：http://espressif.com/
+
+2:目录结构
+│  ESP8266_RTOS_SDK_ALINK                                                           // 乐鑫针对于ALINK的ESP8266_RTOS_SDK，此SDK与ESP8266标准SDK不一样，内部含alink特定的库，不可用标准SDK替换，待有更新时会一起更新
+│  bin						            // ./app/gen_misc.sh 默认指定的bin文件放置位置
+│  releasenote.txt
+│  StartReadme.txt
+│  
+└─app
+    │  build.sh
+    │  gen_misc.bat
+    │  gen_misc.sh    					//用此工程脚本可进行编译，注意修改ESP8266_RTOS_SDK路径
+    │  Makefile
+    │  readme.txt
+    │  
+    ├─driver						// GPIO 按键，uart等驱动
+    │      gpio.c
+    │      hw_timer.c
+    │      key.c
+    │      Makefile
+    │      uart.c
+    │      
+    ├─include			
+    │  │  alink_export.h					// alink头文件
+    │  │  alink_export_rawdata.h				// alink头文件
+    │  │  alink_json.h					// alink头文件
+    │  │  esp_ota.h						// user ota fw 头文件
+    │  │  user_config.h					// user config 头文件
+    │  │  
+    │  └─driver						//驱动头文件
+    │          gpio.h
+    │          hw_timer.h
+    │          key.h
+    │          uart.h
+    │          
+    └─user
+        │  ALINKTEST_LIVING_LIGHT_SMARTLED_LUA.lua		// demo lua脚本，实际产品需根据自身产品所定义参数重新重新生成，此脚本仅供软件调试使用
+        │  Makefile
+        │  sample.c						//一个简单的alink sample 程序
+        │  upgrade_check_api.c					// ota 功能文件	
+        │  upgrade_flash_api.c					// ota功能文件
+        │  user_demo.c					// demo项目文件，包含了alink产品的功能数据处理部分，用户可在此基础上修改真实设备的功能，如开关，插座，pwm灯，命令控制等
+        │  user_main.c					//用户程序入口
+        │  	
+        ├─user_light						//一个实现的pwm调光灯的例子，用户可在此基础上简单修改即可实现alink 阿里小智 pwm调光灯，可在user_config.h 中配置
+        │  ├─include						//pwm调光灯头文件
+        │  │      user_light.h
+        │  │      user_light_adj.h
+        │  │      
+        │  └─src						//pwm调光灯功能文件，用户可在此基础上简单修改
+        │          Makefile
+        │          user_light.c
+        │          user_light_adj.c
+        │          
+        └─user_uart						//一个实现的uart控制的例子，用户可在此基础上简单修改即可实现 uart协议 控制的阿里小智产品，可在user_config.h 中配置
+            ├─include
+            │      user_uart.h
+            │      
+            └─src
+                    Makefile
+                    user_uart.c					//串口设备产品处理，用户可在此文件下修改产品对应的串口协议并完成真实产品的控制
+                    
+3：sample是一个demo示例,不是一个真实设备.在做项目时需要将其中的相关函数按真实设备进行重写.用户可以在user_config.h内启用乐鑫已经完成开发的示例产品的例子
+要求: 
+    1)设备开机第一次要完整上报所有状态信息. 之后的状态发生改变或者服务器下行命令时才上报数据.
+    2)设备上报数据需要做去重复,减缓服务器压力.
+    3)前期开发可以用沙箱环境开发,项目稳定后切换到线上环境，在sample.c 默认的alink参数，仅供前期调试使用，真实产品开发需向阿里申请厂家的设备接入参数.
+
+注意:沙箱是测试环境, 线上是正式环境.两者拥有不同的数据库,所以设备连接的是沙箱服务器,要确保app也处于沙箱环境,否则进入app界面提示"设备同步中",或者看不到已经绑定的设备.
+
+4：关于测试产品添加使用
+    1) 阿里小智厂测包手机App 下载，配网时选择  健康秤―>阿里配网v2
+        http://open.alink.aliyun.com/download/
+
+    2) 配网成功后，查看打印log，从中找出  UUID ,复制该UUID字串到如下网址生成二维码。
+       http://open.alink.aliyun.com/qrcode/
+
+    3) 打开小智app, 选择右下角“设置” ―> “关于”―>”环境配置”―> 选择“线上” 和 “厂测包” ―> “确认” ,  "提示杀掉进程,重启app"
+  
+    4) 重启APP后，选择右下角“设置” ―> “关于”―>”环境配置”―> “自主调试” ―> 选择其中第二个扫描二维码图标。然后扫描第2步生成的二维码进行设备绑定。
+  
+    5) 设备绑定完成后，主界面多了一个已经绑定的设备,点击可以操作了(设备需要已经联网才能操作).
+
+5.技术支持:
+乐鑫：http://www.espressif.com/         乐鑫技术支持邮箱：feedback@espressif.com
+阿里：http://open.alink.aliyun.com/
+
