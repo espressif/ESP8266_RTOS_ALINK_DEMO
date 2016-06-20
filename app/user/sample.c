@@ -516,6 +516,15 @@ int esp_ota_upgrade(void)
 }
 extern int need_notify_app;
 extern int  need_factory_reset ;
+
+void set_thread_stack_size(struct thread_stacksize * p_thread_stacksize)
+{
+    p_thread_stacksize->alink_main_thread_size = 0xc00;
+    p_thread_stacksize->send_work_thread_size = 0x800;
+    p_thread_stacksize->wsf_thread_size = 0x1000;
+    p_thread_stacksize->func_thread_size = 0x800;
+}
+   
 int ICACHE_FLASH_ATTR alink_demo()
 {
 	struct device_info main_dev;
@@ -536,7 +545,8 @@ int ICACHE_FLASH_ATTR alink_demo()
     alink_register_cb(ALINK_FUNC_OTA_FIRMWARE_SAVE, esp_ota_firmware_update);
     alink_register_cb(ALINK_FUNC_OTA_UPGRADE, esp_ota_upgrade);
 	/*start alink-sdk */
-#ifdef PASS_THROUGH		//透传方式(设备与服务器采用raw data通讯)
+    set_thread_stack_size(&g_thread_stacksize);
+    #ifdef PASS_THROUGH		
 	alink_start_rawdata(&main_dev, rawdata_get_callback, rawdata_set_callback);
 #else // 非透传方式(设备与服务器采用json格式数据通讯)
 	main_dev.dev_callback[ACB_GET_DEVICE_STATUS] = main_dev_get_device_status_callback;

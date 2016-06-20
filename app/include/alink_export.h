@@ -191,12 +191,27 @@ struct device_info {
     char secret_sandbox[STR_SEC_LEN];
 };
 
+struct thread_stacksize {
+    unsigned int alink_main_thread_size;
+    unsigned int wsf_thread_size;
+    unsigned int send_work_thread_size;
+	unsigned int func_thread_size;
+};
+extern struct thread_stacksize g_thread_stacksize;
 /******************************************/
 /******************************************/
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+/***
+    default:
+    unsigned int alink_main_thread_size 0xc00
+    unsigned int wsf_thread_size        0x1000
+    unsigned int send_work_thread_size  0x800
+	unsigned int func_thread_size       0x800
+*/
+void set_thread_stack_size(struct thread_stacksize *p_thread_stacksize);
 
 /***
  * @desc:    Configure sdk features, such as default thread number of thread pool

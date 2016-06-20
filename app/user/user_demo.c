@@ -255,6 +255,16 @@ extern void alink_ota_init();
 
 void ota_test()
 {
+    pthread_mutex_init(&fwOtaStatus.mutex,NULL);
+    alink_ota_init();
+    strcpy(fwFileInfo.fwMd5,"B3822931C345C88C9BA4AFB03C0C7295");
+    fwFileInfo.fwSize = 388388;
+    //strcpy(fwFileInfo.fwUrl,"http://otalink.alicdn.com/ALINKTEST_LIVING_LIGHT_SMARTLED_LUA/1.0.1/user1.2048.new.5.bin");
+    strcpy(fwFileInfo.fwUrl,"http://otalink.alicdn.com/ALINKTEST_LIVING_LIGHT_SMARTLED/1.0.1/user1.2048.new.5.bin");
+    strcpy(fwFileInfo.fwVersion,"1.0.1");
+    fwFileInfo.zip = 0;
+    dumpFwInfo();
+    create_thread(&fwOtaStatus.id, "firmware upgrade pthread", (void *)alink_ota_main_thread, &fwFileInfo, 0xc00);
 
 }
 void ICACHE_FLASH_ATTR sw2_key_long_press() 
