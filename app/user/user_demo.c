@@ -31,6 +31,7 @@
 #include "alink_export.h"
 #include "user_config.h"
 #include "esp_ota.h"
+#include "esp_system.h"
 #if USER_UART_CTRL_DEV_EN
 #include "user_uart.h" // user uart handler head
 #endif
@@ -363,13 +364,33 @@ static void ICACHE_FLASH_ATTR sys_show_rst_info(void)
 
 	return;
 }
+void ICACHE_FLASH_ATTR user_check_rst_info()
+{
+    struct rst_info *rtc_info = system_get_rst_info();
 
+    os_printf("reset reason: %x\n", rtc_info->reason);
+
+    if (rtc_info->reason == REASON_WDT_RST ||
+        rtc_info->reason == REASON_EXCEPTION_RST ||
+        rtc_info->reason == REASON_SOFT_WDT_RST) {
+        if (rtc_info->reason == REASON_EXCEPTION_RST) {
+            os_printf("Fatal exception (%d):\n", rtc_info->exccause);
+        }
+        os_printf("epc1=0x%08x, epc2=0x%08x, epc3=0x%08x, excvaddr=0x%08x, depc=0x%08x\n",
+                rtc_info->epc1, rtc_info->epc2, rtc_info->epc3, rtc_info->excvaddr, rtc_info->depc);
+    }
+    else{
+      os_printf("epc1=0x%08x, epc2=0x%08x, epc3=0x%08x, excvaddr=0x%08x, depc=0x%08x\n",
+                rtc_info->epc1, rtc_info->epc2, rtc_info->epc3, rtc_info->excvaddr, rtc_info->depc);  
+    }
+
+}
 void ICACHE_FLASH_ATTR user_demo(void) 
 {
 	unsigned int ret = 0;
 	os_printf("SDK version:%s,alink version:%s\n", system_get_sdk_version(), CUS_GLOBAL_VER);
 	os_printf("heap_size %d\n", system_get_free_heap_size());
-
+    user_check_rst_info();
 #ifdef ENABLE_GPIO_KEY   // demo for smartplug class products
 	init_key();
 //	wifi_set_event_handler_cb(wifi_event_hand_function);

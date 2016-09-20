@@ -181,6 +181,11 @@ int ICACHE_FLASH_ATTR main_dev_set_device_status_callback(alink_down_cmd_ptr dow
 #endif
 #if USER_PWM_LIGHT_EN
 	USER_LIGHT_DATA *user_light_data_ptr = zalloc(sizeof(USER_LIGHT_DATA));
+
+
+	   user_light_data_ptr->light_period=1000;
+	   user_light_data_ptr->light_r=virtual_device.temp_value;
+	   user_light_data_ptr->light_g=virtual_device.light_value;
 	// Set r g b w data,Developers need to parse the real device parameters corresponding to the Json package
 	light_set_aim(user_light_data_ptr->light_r,user_light_data_ptr->light_g,user_light_data_ptr->light_b,user_light_data_ptr->light_cw,user_light_data_ptr->light_ww,user_light_data_ptr->light_period);
 
@@ -611,3 +616,13 @@ int ICACHE_FLASH_ATTR alink_demo()
 
 	return 0;
 }
+
+char *platform_get_os_version(char os_ver[PLATFORM_OS_VERSION_LEN])
+{
+    return strncpy(os_ver, "ESP-WROOM-02", PLATFORM_OS_VERSION_LEN);
+}
+char *platform_get_module_name(char name_str[PLATFORM_MODULE_NAME_LEN])
+{
+    return strncpy(name_str,"1.3.0(68c9e7b)",PLATFORM_MODULE_NAME_LEN);
+}
+

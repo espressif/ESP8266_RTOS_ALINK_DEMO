@@ -57,6 +57,9 @@ enum ALINK_SYSTEM_CALLBACK {
 #define ALINK_WAIT_FOREVER	(-1)
 
 #define MAX_NAME_LEN	(80 + 1)
+#define STR_TOKEN_LEN	(64 + 1)
+#define STR_AUTHTOKEN_LEN	(64 + 1)
+#define STR_ADMIN_LEN	(32 + 1)
 #define STR_UUID_LEN	(32 + 1)
 #define STR_NAME_LEN	(32 + 1)
 #define STR_SN_LEN	(64 + 1)
@@ -67,6 +70,14 @@ enum ALINK_SYSTEM_CALLBACK {
 #define STR_SEC_LEN	(40 + 1)
 #define mem_check // os_printf
 #define LW_ALINK 1
+#define STR_UTC_LEN	(18)
+#define STR_MSG_LEN	(128)
+#define STR_SHORT_LEN (32)
+#define STR_LONG_LEN (128)
+#define PLATFORM_OS_VERSION_LEN     STR_SHORT_LEN
+#define OS_VERSION_LEN               PLATFORM_OS_VERSION_LEN
+#define PLATFORM_MODULE_NAME_LEN   STR_SHORT_LEN
+#define OS_MODULE_NAME_LEN           PLATFORM_MODULE_NAME_LEN
 
 enum ALINK_CALLBACK {
     ACB_GET_DEVICE_STATUS = 0,
@@ -122,6 +133,7 @@ enum ALINK_LOGLEVEL_BIT {
 #define ALINK_LL_ERROR (1 << ALINK_LL_ERROR_BIT)
 #define ALINK_LL_WARN  (1 << ALINK_LL_WARN_BIT)
 #define ALINK_LL_INFO  (1 << ALINK_LL_INFO_BIT)
+#define ALINK_LL_DUMP  (1 << ALINK_LL_DUMP_BIT)
 #define ALINK_LL_DEBUG (1 << ALINK_LL_DEBUG_BIT)
 #define ALINK_LL_TRACE (1 << ALINK_LL_TRACE_BIT)
 
