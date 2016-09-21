@@ -84,11 +84,8 @@
  /home/esp8266/Share/ESP8266/test_2016_9/ESP8266_RTOS_ALINK_DEMO/app/../ESP8266_RTOS_SDK_ALINK/include/lwip/lwip/netdb.h \
  ../include/alink_export.h ../include/user_config.h ../include/esp_ota.h \
  /home/esp8266/Share/ESP8266/test_2016_9/ESP8266_RTOS_ALINK_DEMO/app/../ESP8266_RTOS_SDK_ALINK/include/espressif/esp_system.h \
- ../user/user_light/include/user_light.h \
- ../user/user_light/include/../../../include/user_config.h \
- ../user/user_light/include/../../../include/driver/key.h \
- ../user/user_light/include/../../../include/driver/gpio.h \
  /home/esp8266/Share/ESP8266/test_2016_9/ESP8266_RTOS_ALINK_DEMO/app/../ESP8266_RTOS_SDK_ALINK/include/freertos/semphr.h \
  /home/esp8266/Share/ESP8266/test_2016_9/ESP8266_RTOS_ALINK_DEMO/app/../ESP8266_RTOS_SDK_ALINK/include/freertos/queue.h \
  ../include/driver/gpio.h ../include/driver/key.h \
+ ../include/driver/gpio.h \
  /home/esp8266/Share/ESP8266/test_2016_9/ESP8266_RTOS_ALINK_DEMO/app/../ESP8266_RTOS_SDK_ALINK/include/espressif/esp8266/eagle_soc.h

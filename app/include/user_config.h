@@ -32,7 +32,7 @@ extern  int need_factory_reset ;
 #define LFILE_SIZE 4096
 
 #define USER_UART_CTRL_DEV_EN 	 (0)   // support allink uart smart device
-#define USER_PWM_LIGHT_EN        (1)   // support alink pwm light  
+#define USER_PWM_LIGHT_EN        (0)   // support alink pwm light  
 #define USER_VIRTUAL_DEV_TEST	 (1)
 
 #define CUS_GLOBAL_VER "AlinkV1.0.02-20160920"

@@ -77,5 +77,4 @@
  /home/esp8266/Share/ESP8266/test_2016_9/ESP8266_RTOS_ALINK_DEMO/app/../ESP8266_RTOS_SDK_ALINK/include/espressif/spi_flash.h \
  /home/esp8266/Share/ESP8266/test_2016_9/ESP8266_RTOS_ALINK_DEMO/app/../ESP8266_RTOS_SDK_ALINK/include/espressif/pwm.h \
  ../include/user_light.h ../include/../../../include/user_config.h \
- ../include/../../../include/driver/key.h \
- ../include/../../../include/driver/gpio.h ../include/user_light_adj.h
+ ../include/user_light_adj.h
