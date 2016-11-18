@@ -32,6 +32,8 @@
 #include "user_config.h"
 #include "esp_ota.h"
 #include "esp_system.h"
+int dbg_get_recv_times = 0;
+
 #if USER_UART_CTRL_DEV_EN
 #include "user_uart.h" // user uart handler head
 #endif
@@ -49,8 +51,10 @@ struct single_key_param *single_key[2];
 struct keys_param keys;
 static int is_long_press = 0;
 
+
 #endif	
 
+int aws_sample(void);
 static char vendor_ssid[32];
 static char vendor_passwd[64];
 static char *vendor_tpsk = "PLnBaCPHF7icf65a5nJmcL2GZC+w3vwCnH36k8O91og=";
@@ -83,14 +87,16 @@ unsigned portBASE_TYPE ICACHE_FLASH_ATTR stack_free_size()
 
 void ICACHE_FLASH_ATTR startdemo_task(void *pvParameters) 
 {
-	os_printf("heap_size %d\n", system_get_free_heap_size());
+	os_printf("start demo task heap_size %d\n", system_get_free_heap_size());
 	stack_free_size();
+	
 	while (1) {
 		int ret = wifi_station_get_connect_status();   // wait for sys wifi connected OK.
 		if (ret == STATION_GOT_IP)
 			break;
 		vTaskDelay(100 / portTICK_RATE_MS);	 // 100 ms
 	}
+	
 	alink_demo();
 	vTaskDelete(NULL);
 }
@@ -99,15 +105,24 @@ int need_notify_app = 0;
 #if 1
 void ICACHE_FLASH_ATTR wificonnect_task(void *pvParameters) 
 {
-	os_printf("startdemo_task : zconfig\n");
-	zconfig_start(vendor_callback, vendor_tpsk);   // alink smart config start
-	os_printf("waiting network ready...\r\n");
-	while (1) {
+	os_printf("enter smartconfig confing net mode\n");
+	int ret=0;
+
+	#if 1
+	ret=aws_sample();   // alink smart config start
+	if(ret==-1){// alink smarconfig err,enter softap config net mode
+		ESP_DBG(("********ENTER SOFTAP MODE******"));
+		os_printf("enter softap config net mode\n");
+		aws_softap_main();
+	}
+	#endif
+	
+	while(1) {
 		// device could show smart config status here, such as light Flashing.
 		int ret = wifi_station_get_connect_status();
 		if (ret == STATION_GOT_IP)
 			break;
-		vTaskDelay(100 / portTICK_RATE_MS);
+		vTaskDelay(200 / portTICK_RATE_MS);
 	}
 	need_notify_app = 1;
 	vTaskDelete(NULL);
@@ -134,7 +149,7 @@ void ICACHE_FLASH_ATTR wificonnect_task(void *pvParameters)  // it is a test rou
 
 #endif
  
-#if  1				// wifi
+#if  0				// wifi
     //wifi_set_event_handler_cb(wifi_event_hand_function);
 static void ICACHE_FLASH_ATTR wifi_event_hand_function(System_Event_t * event) 
 {
@@ -165,18 +180,18 @@ static void ICACHE_FLASH_ATTR wifi_event_hand_function(System_Event_t * event)
 void ICACHE_FLASH_ATTR setLed1State(int flag) 
 {
 	if (0 == flag) {
-		GPIO_OUTPUT_SET(GPIO_ID_PIN(12), 1);	// led 0ff
+		GPIO_OUTPUT_SET(GPIO_ID_PIN(USER_CFG_STATUS_LED1_GPIO_NO), 1);	// led 0ff
 	} else {
-		GPIO_OUTPUT_SET(GPIO_ID_PIN(12), 0);	// led on
+		GPIO_OUTPUT_SET(GPIO_ID_PIN(USER_CFG_STATUS_LED1_GPIO_NO), 0);	// led on
 	}
 }
 
 void ICACHE_FLASH_ATTR setLed2State(int flag) 
 {
 	if (0 == flag) {
-		GPIO_OUTPUT_SET(GPIO_ID_PIN(15), 0);	// led off
+		GPIO_OUTPUT_SET(GPIO_ID_PIN(USER_CFG_STATUS_LED2_GPIO_NO), 0);	// led off
 	} else {
-		GPIO_OUTPUT_SET(GPIO_ID_PIN(15), 1);	// led on
+		GPIO_OUTPUT_SET(GPIO_ID_PIN(USER_CFG_STATUS_LED2_GPIO_NO), 1);	// led on
 	}
 }
 
@@ -186,12 +201,12 @@ void ICACHE_FLASH_ATTR led_gpio_init(void)
 	pGPIOConfig.GPIO_IntrType = GPIO_PIN_INTR_DISABLE;
 	pGPIOConfig.GPIO_Pullup = GPIO_PullUp_EN;
 	pGPIOConfig.GPIO_Mode = GPIO_Mode_Output;
-	pGPIOConfig.GPIO_Pin = GPIO_Pin_12;	//led1
+	pGPIOConfig.GPIO_Pin = USER_CFG_STATUS_LED1_GPIO_PIN;	//led1
 	gpio_config(&pGPIOConfig);
-	GPIO_OUTPUT_SET(GPIO_ID_PIN(12), 1);	//close led1
-	pGPIOConfig.GPIO_Pin = GPIO_Pin_15;	//led2
+	GPIO_OUTPUT_SET(GPIO_ID_PIN(USER_CFG_STATUS_LED1_GPIO_NO), 1);	//close led1
+	pGPIOConfig.GPIO_Pin = USER_CFG_STATUS_LED2_GPIO_PIN;	//led2
 	gpio_config(&pGPIOConfig);
-	GPIO_OUTPUT_SET(GPIO_ID_PIN(15), 0);	//close led2
+	GPIO_OUTPUT_SET(GPIO_ID_PIN(USER_CFG_STATUS_LED2_GPIO_NO), 0);	//close led2
 	setLed1State(0);
 	setLed2State(0);
 } 
@@ -201,6 +216,8 @@ static int sw1_long_key_flag = 0;
 static int sw2_long_key_flag = 0;
 void ICACHE_FLASH_ATTR user_key_long_press(void) 
 {
+	
+    ESP_DBG((" long press.."));
 	os_printf("[%s][%d] user key long press \n\r",__FUNCTION__,__LINE__);
 	sw1_long_key_flag = 1;
 	setLed1State(1);
@@ -213,6 +230,8 @@ void ICACHE_FLASH_ATTR user_key_long_press(void)
 
 void ICACHE_FLASH_ATTR user_key_short_press(void) 
 {
+	ESP_DBG((" short press.."));
+
 	int ret = 0;
        if(sw1_long_key_flag) {
            sw1_long_key_flag = 0;
@@ -221,9 +240,8 @@ void ICACHE_FLASH_ATTR user_key_short_press(void)
 	os_printf("[%s][%d] user key press \n\r",__FUNCTION__,__LINE__);
 	setLed1State(0);
 	setLed2State(1);
-	setSmartConfigFlag(0x1);   // short press enter smartconfig
-	vTaskDelay(100);
-	system_restart();  // restart then enter to smartconfig mode
+	setSmartConfigFlag(0x1);
+	system_restart();
 } 
 
 #define MD5_STR_LEN 32
@@ -300,7 +318,10 @@ void ICACHE_FLASH_ATTR reset_keyinit(void)
 void ICACHE_FLASH_ATTR init_key() 
 {
 	led_gpio_init();
-	reset_keyinit();
+//	reset_keyinit();
+	user_key_input_init(USER_CFG_KEY_GPIO_PIN);
+
+	return;
 } 
 
 int ICACHE_FLASH_ATTR readSmartConfigFlag() {
@@ -351,15 +372,13 @@ static void ICACHE_FLASH_ATTR sys_show_rst_info(void)
 {
 	struct rst_info *rtc_info = system_get_rst_info();	
 	os_printf("reset reason: %x\n", rtc_info->reason);	
-	if (rtc_info->reason == REASON_WDT_RST ||		
-		rtc_info->reason == REASON_EXCEPTION_RST ||		
-		rtc_info->reason == REASON_SOFT_WDT_RST) 
+	if ((rtc_info->reason == REASON_WDT_RST) ||	(rtc_info->reason == REASON_EXCEPTION_RST) ||(rtc_info->reason == REASON_SOFT_WDT_RST)) 
 	{		
 		if (rtc_info->reason == REASON_EXCEPTION_RST) 
 		{			
 			os_printf("Fatal exception (%d):\n", rtc_info->exccause);		
 		}		
-		os_printf("epc1=0x%08x, epc2=0x%08x, epc3=0x%08x, excvaddr=0x%08x, depc=0x%08x\n",rtc_info->epc1, rtc_info->epc2, rtc_info->epc3, rtc_info->excvaddr, rtc_info->depc);	
+		os_printf("esp@bill dbg: epc1=0x%08x, epc2=0x%08x, epc3=0x%08x, excvaddr=0x%08x, depc=0x%08x\n",rtc_info->epc1, rtc_info->epc2, rtc_info->epc3, rtc_info->excvaddr, rtc_info->depc);	
 	}
 
 	return;
@@ -368,29 +387,30 @@ void ICACHE_FLASH_ATTR user_check_rst_info()
 {
     struct rst_info *rtc_info = system_get_rst_info();
 
-    os_printf("reset reason: %x\n", rtc_info->reason);
+    ESP_DBG(("reset reason: %x\n", rtc_info->reason));
 
-    if (rtc_info->reason == REASON_WDT_RST ||
-        rtc_info->reason == REASON_EXCEPTION_RST ||
-        rtc_info->reason == REASON_SOFT_WDT_RST) {
-        if (rtc_info->reason == REASON_EXCEPTION_RST) {
+	if ((rtc_info->reason == REASON_WDT_RST) || (rtc_info->reason == REASON_EXCEPTION_RST) ||(rtc_info->reason == REASON_SOFT_WDT_RST)) 
+	{
+        if (rtc_info->reason == REASON_EXCEPTION_RST) 
+		{
             os_printf("Fatal exception (%d):\n", rtc_info->exccause);
         }
-        os_printf("epc1=0x%08x, epc2=0x%08x, epc3=0x%08x, excvaddr=0x%08x, depc=0x%08x\n",
+        os_printf(" esp dbg epc1=0x%08x, epc2=0x%08x, epc3=0x%08x, excvaddr=0x%08x, depc=0x%08x\n",
                 rtc_info->epc1, rtc_info->epc2, rtc_info->epc3, rtc_info->excvaddr, rtc_info->depc);
     }
     else{
-      os_printf("epc1=0x%08x, epc2=0x%08x, epc3=0x%08x, excvaddr=0x%08x, depc=0x%08x\n",
-                rtc_info->epc1, rtc_info->epc2, rtc_info->epc3, rtc_info->excvaddr, rtc_info->depc);  
+      ESP_DBG(("epc1=0x%08x, epc2=0x%08x, epc3=0x%08x, excvaddr=0x%08x, depc=0x%08x\n",
+                rtc_info->epc1, rtc_info->epc2, rtc_info->epc3, rtc_info->excvaddr, rtc_info->depc));  
     }
 
 }
 void ICACHE_FLASH_ATTR user_demo(void) 
 {
 	unsigned int ret = 0;
-	os_printf("SDK version:%s,alink version:%s\n", system_get_sdk_version(), CUS_GLOBAL_VER);
+	
+	os_printf("SDK version:%s\n,alink version:%s\n,user fw ver:1.0.0(20161118)\n", system_get_sdk_version(), USER_ALINK_GLOBAL_VER);
 	os_printf("heap_size %d\n", system_get_free_heap_size());
-    user_check_rst_info();
+ //   user_check_rst_info();
 #ifdef ENABLE_GPIO_KEY   // demo for smartplug class products
 	init_key();
 //	wifi_set_event_handler_cb(wifi_event_hand_function);
@@ -400,11 +420,27 @@ void ICACHE_FLASH_ATTR user_demo(void)
 		sizeof(struct station_config), system_get_free_heap_size());
 	ret = readSmartConfigFlag();	// -1 read flash fail!
 	os_printf(" read flag:%d \n", ret);
-	if (ret >0) {		
+	if(ret >0) {		
 		setSmartConfigFlag(0);	 // clear smart config flag
-		xTaskCreate(wificonnect_task, "wificonnect_task", 256, NULL, 2, NULL);
-		need_notify_app = 1;
+		xTaskHandle xIdleTaskHandle_alit;
+	//	xTaskCreate(wificonnect_task, "wificonnect_task", 256+128, NULL, 2, NULL);
+		xTaskCreate(wificonnect_task, "wificonnect_task", 256+128, NULL, 2, &xIdleTaskHandle_alit);
+
+		ESP_DBG(("wifi conn task thandler:0x%x",xIdleTaskHandle_alit));		
+//		need_notify_app = 1;
 	}
+
+#if 0
+	while (1) {
+		int ret = wifi_station_get_connect_status();   // wait for sys wifi connected OK.
+		if (ret == STATION_GOT_IP)
+			break;
+		vTaskDelay(100 / portTICK_RATE_MS);	 // 100 ms
+	}
+	
+#endif
+
+	
 	xTaskCreate(startdemo_task, "startdemo_task",(256*4), NULL, 2, NULL);
 	
 #if USER_PWM_LIGHT_EN
@@ -425,7 +461,7 @@ int upgrade_download(char *pusrdata, unsigned short length)
 {
     char *ptr = NULL;
     char *ptmp2 = NULL;
-    char lengthbuffer[32];
+    char lengthbuffer[32] ={0};
     bool ret = false;
     os_printf("%s %d totallength =%d length = %d \n",__FUNCTION__,__LINE__,totallength,length);
     if( (pusrdata == NULL )||length < 1) {

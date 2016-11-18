@@ -25,9 +25,22 @@
 #ifndef __UART_H__
 #define __UART_H__
 
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef struct user_own_cfg{
+	char uart_debug_en;
+	
+	char tmp[7];
+}ALINK_USER_OWN_CFG;
+
+extern unsigned char user_uart_print_flag;
+extern ALINK_USER_OWN_CFG alink_user_cfg_data;
+
+#define ALINK_USER_CFG_SEC   (0xfb000/4096)
 
 #define ETS_UART_INTR_ENABLE()  _xt_isr_unmask(1 << ETS_UART_INUM)
 #define ETS_UART_INTR_DISABLE() _xt_isr_mask(1 << ETS_UART_INUM)

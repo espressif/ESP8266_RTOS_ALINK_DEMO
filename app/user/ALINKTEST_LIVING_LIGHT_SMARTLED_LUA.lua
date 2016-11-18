@@ -29,8 +29,8 @@
 --     @Rets:device meta data                                                    --
 --                                                                               --
 -- Basic Functions:                                                              --
---   fromhex(str)                                                         --
---   tohex(str)                                                           --
+--   string.fromhex(str)                                                         --
+--   string.tohex(str)                                                           --
 --   getbyte(str,pos)                                                            --
 --   subbyte(str,start,end)                                                      --
 --   arraytostring(tdlist, start, end)                                           --
@@ -69,7 +69,7 @@
 	    }
           }
     -- do your job here --
-    local str = fromhex(meta)
+    local str = string.fromhex(meta)
     local v_OnOff_Power = bit32.band(str:byte(3), 0x1);
 --	print(tostring(v_OnOff_Power));
 	local v_WorkMode_MasterLight = bit32.band(str:byte(4), 0xf);
@@ -94,7 +94,6 @@
   end
 
   function convert_to_private(t)
-    local teststring = ""
     local metaDataListSample = {
 		[0] = 0xaa,       --header
 		[1] = 0x07,       --cmd length
@@ -124,25 +123,23 @@
 		elseif (key == "TimeDelay_PowerOff") then
 			metaDataListSample[6] = tonumber(t['TimeDelay_PowerOff']['value'])
 			--print(key, metaDataListSample[6])
-		elseif (key == "TestString" ) then
-		    teststring = t['TestString']['value'];
 		end
 	end
     
     -- do your job end --
     local metaData = arraytostring(metaDataListSample,0,metaDatamaxposSample)
-    return metaData..teststring
+    return metaData
   end
 ---End: Transaction Functions---
 
 ---Begin: Basic Functions---
-  function fromhex(str)
+  function string.fromhex(str)
       return (str:gsub('..', function (cc)
           return string.char(tonumber(cc, 16))
       end))
   end
   
-  function tohex(str)
+  function string.tohex(str)
       return (str:gsub('.', function (c)
           return string.format('%02X', string.byte(c))
       end))
@@ -163,7 +160,7 @@
     for i=pos1,pos2 do
       res = res..string.char(tdlist[i])
     end
-    res = tohex(res)
+    res = string.tohex(res)
     return res;
   end
   
@@ -217,9 +214,6 @@
 	    },
 	    WorkMode_MasterLight= {
 	        value = 1
-	    },    
-	    TestString = {
-	        value = "abcdefg"
 	    }
     }
 	local metaDataSample = 'AA07010130500055'

@@ -27,6 +27,8 @@
 #include <string.h>
 #include "esp_common.h"
 #include "user_uart.h"
+#include "../../../include/driver/gpio.h"
+#include "../../../include/driver/key.h"
 
 //#include "user_light.h"
 
@@ -84,14 +86,85 @@ static u8 ICACHE_FLASH_ATTR cus_uart_data_handle(char *dat_in, int in_len, char 
 	return 0x00;
 }
 
+static void ICACHE_FLASH_ATTR user_key_cycle_handle(void)
+{
+	u32 sys_time_value = system_get_time();
+	static u32 key_press_start = 0;
+	if(GPIO_INPUT_GET(GPIO_ID_PIN(USER_CFG_KEY_GPIO_NO)) == 0x00)
+	{
+		if(key_press_start == 0)
+		{
+			vTaskDelay(30 / portTICK_RATE_MS);	 	// 30 ms
+			if(GPIO_INPUT_GET(GPIO_ID_PIN(USER_CFG_KEY_GPIO_NO)) == 0x00)  // press low
+			{
+				vTaskDelay(30 / portTICK_RATE_MS);  // 30 ms
+				if(GPIO_INPUT_GET(GPIO_ID_PIN(USER_CFG_KEY_GPIO_NO)) == 0x00)  // press low
+				{
+					key_press_start = system_get_time();
+					ESP_DBG(("key pressed"));
+				}
+			}
+		}
+		else
+		{	
+			if(( (system_get_time()-key_press_start)/1000)>=4*1000)
+			{
+				while(1)
+				{
+					setLed1State(1);
+					vTaskDelay(300 / portTICK_RATE_MS);  // 300 ms
+					setLed1State(0);
+					vTaskDelay(300 / portTICK_RATE_MS);  // 300 ms
+					if(GPIO_INPUT_GET(GPIO_ID_PIN(USER_CFG_KEY_GPIO_NO)) != 0x00)
+						break;
+				}
+			}
+		}
+	}
+	else
+	{
+		if(key_press_start != 0x00)
+		{
+			ESP_DBG(("press[%d]ms", (system_get_time()-key_press_start)/1000));
+			if(4*1000>( (system_get_time()-key_press_start)/1000)>0)
+			{
+				ESP_DBG(("short pressed"));
+				user_key_short_press();
+				
+			}
+			else if(( (system_get_time()-key_press_start)/1000)>=4*1000) // >5s press
+			{
+				
+				ESP_DBG(("long pressed"));
+				user_key_long_press();
+			}
+			else
+			{
+				ESP_DBG(("no pressed"));
+			}
+
+			key_press_start = 0;
+		}
+	}
+	
+	return;
+}
+
 void ICACHE_FLASH_ATTR user_uart_task(void *pvParameters)
 {
     CusUartIntrPtr uartptrData;
 	u32 sys_time_value = system_get_time();
+	u32 key_press_start = 0;
+	int ret = 0;
 	char uart_beat_data[]={0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38};  // test uart beat data "12345678"
-	
-    while(1)
+	ESP_DBG((" user_uart_task"));
+	while(1)
 	{
+		user_key_cycle_handle();	// a demo key func	
+		
+		vTaskDelay(50 / portTICK_RATE_MS);	 // 100 ms
+		#if 0
+
 		if (xQueueReceive(xQueueCusUart, (void *)&uartptrData, (portTickType)500/*portMAX_DELAY*/)) // wait about 5sec 
 		{
 			ESP_DBG(("data uart recv.."));
@@ -109,6 +182,8 @@ void ICACHE_FLASH_ATTR user_uart_task(void *pvParameters)
 			uart0_write_data(uart_beat_data,sizeof(uart_beat_data));
 			sys_time_value = system_get_time();
 		}
+    
+		#endif
 	}
 
     vTaskDelete(NULL);
@@ -117,9 +192,16 @@ void ICACHE_FLASH_ATTR user_uart_task(void *pvParameters)
 
 void ICACHE_FLASH_ATTR user_uart_dev_start(void)
 {
+	spi_flash_read((ALINK_USER_CFG_SEC) * SPI_FLASH_SEC_SIZE,(uint32 *)&alink_user_cfg_data, sizeof(ALINK_USER_OWN_CFG));
+	ESP_DBG(("cus init uart debug flag[%x]",alink_user_cfg_data.uart_debug_en));
+	if(alink_user_cfg_data.uart_debug_en == 0x01)  // init debug cfg
+		user_uart_print_flag = 0x01;
+	else
+		user_uart_print_flag = 0x00;
+
 	uart_init_new();   // cfg uart0 connection device MCU, cfg uart1 TX debug output
-    xQueueCusUart = xQueueCreate((unsigned portBASE_TYPE)CUS_UART0_QUEUE_LENGTH, sizeof(CusUartIntrPtr));
-    xTaskCreate(user_uart_task, (uint8 const *)"uart", 256, NULL, tskIDLE_PRIORITY + 2, NULL);
+ //   xQueueCusUart = xQueueCreate((unsigned portBASE_TYPE)CUS_UART0_QUEUE_LENGTH, sizeof(CusUartIntrPtr));
+    xTaskCreate(user_uart_task, (uint8 const *)"uart", 128/*256*/, NULL, tskIDLE_PRIORITY + 2, NULL);
 
 	return;
 }

@@ -28,17 +28,15 @@
 
 #define USE_OPTIMIZE_PRINTF
 extern  int need_factory_reset ;
-#define LFILE_START_ADDR  0x1f8000// flash size is 0x200000
+#define LFILE_START_ADDR  0x1f8000  // flash size is 0x200000
 #define LFILE_SIZE 4096
 
-#define USER_UART_CTRL_DEV_EN 	 (0)   // support allink uart smart device
+#define USER_UART_CTRL_DEV_EN 	 (1)   // support allink uart smart device
 #define USER_PWM_LIGHT_EN        (0)   // support alink pwm light  
 #define USER_VIRTUAL_DEV_TEST	 (1)
 
-#define CUS_GLOBAL_VER "AlinkV1.0.02-20160920"
+#define USER_ALINK_GLOBAL_VER "A[Alink1.0|194b173-dirty]M[ESP8266]OS[1.3.0(68c9e7b]"
 
-
-#define ESP_DBG(a) os_printf("[dbg@%s,%d]",__FUNCTION__,__LINE__);os_printf a;os_printf("\r\n")   // for dbg print
 
 typedef struct virtual_dev {   // real device update this Structure parameters
 	u32 power;

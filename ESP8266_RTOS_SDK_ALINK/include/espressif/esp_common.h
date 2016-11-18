@@ -107,4 +107,6 @@
 #include "spi_flash.h"
 #include "pwm.h"
 
+#define ESP_DBG(a) os_printf("[dbg@%s,%d]",__FUNCTION__,__LINE__);os_printf a;os_printf("\r\n")   // for dbg print
+
 #endif

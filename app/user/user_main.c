@@ -31,6 +31,7 @@
 	*******************************************************************************/ 
 void ICACHE_FLASH_ATTR	user_init(void) 
 {
+
 /*
 	start a demo project on esp8266 rtos sdk.
 	run alink cloud connectting.

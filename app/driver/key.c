@@ -17,6 +17,8 @@
 
 #define LONG_PRESS_TIME  5000 //ms
 
+unsigned char key_inter_flag;
+
 LOCAL void key_intr_handler(struct keys_param *keys);
 
 /******************************************************************************
@@ -54,6 +56,22 @@ key_init_single(uint8 gpio_id, uint32 gpio_name, uint8 gpio_func, key_function l
 
     return single_key;
 }
+/**************************key input init**************/
+
+void user_key_input_init(u16 user_gpio_id)
+{
+    GPIO_ConfigTypeDef *pGPIOConfig;
+
+    pGPIOConfig = (GPIO_ConfigTypeDef*)zalloc(sizeof(GPIO_ConfigTypeDef));
+	pGPIOConfig->GPIO_IntrType = GPIO_PIN_INTR_NEGEDGE;
+	pGPIOConfig->GPIO_Pullup = GPIO_PullUp_EN;
+	pGPIOConfig->GPIO_Mode = GPIO_Mode_Input;
+	pGPIOConfig->GPIO_Pin = user_gpio_id; //this is USER_CFG_KEY_GPIO_PIN for switch
+	gpio_config(pGPIOConfig);
+
+	return;
+}
+
 
 /******************************************************************************
  * FunctionName : key_init
@@ -66,6 +84,7 @@ key_init(struct keys_param *keys)
 {
     u32 i;
     GPIO_ConfigTypeDef *pGPIOConfig;
+	key_inter_flag = 0x00;
 
     pGPIOConfig = (GPIO_ConfigTypeDef*)zalloc(sizeof(GPIO_ConfigTypeDef));
     gpio_intr_handler_register(key_intr_handler,keys);
@@ -75,7 +94,7 @@ key_init(struct keys_param *keys)
         pGPIOConfig->GPIO_IntrType = GPIO_PIN_INTR_NEGEDGE;
         pGPIOConfig->GPIO_Pullup = GPIO_PullUp_EN;
         pGPIOConfig->GPIO_Mode = GPIO_Mode_Input;
-        pGPIOConfig->GPIO_Pin = (1 << keys->single_key[i]->gpio_id);//this is GPIO_Pin_13 for switch
+        pGPIOConfig->GPIO_Pin = (1 << keys->single_key[i]->gpio_id);//this is USER_CFG_KEY_GPIO_PIN for switch
         gpio_config(pGPIOConfig);
     }
      //clean last iterrupt
@@ -146,7 +165,13 @@ key_intr_handler(struct keys_param *keys)
 {
     uint8 i;
     uint32 gpio_status = GPIO_REG_READ(GPIO_STATUS_ADDRESS);
-    
+	if(key_inter_flag==0x01)
+	{
+		ESP_DBG((" key interrupt doing..."));
+		return;
+	}
+	key_inter_flag = 0x01;
+    ESP_DBG((" key interrupt [%x]..",keys->key_num));
     for (i = 0; i < keys->key_num; i++) {
         if (gpio_status & BIT(keys->single_key[i]->gpio_id)) {
             //disable this gpio pin interrupt
@@ -177,5 +202,6 @@ key_intr_handler(struct keys_param *keys)
             }
         }
     }
+	key_inter_flag = 0x00;
 }
 

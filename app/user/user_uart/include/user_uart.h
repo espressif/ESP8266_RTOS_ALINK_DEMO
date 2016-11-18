@@ -33,11 +33,12 @@
 
 #define CUS_UART0_QUEUE_LENGTH (10)
 #define CUS_UART_TX_MAX     (128)  // uart tx buf max len
+extern int dbg_get_recv_times;
 
 #if USER_UART_CTRL_DEV_EN
 
 extern xQueueHandle xQueueCusUart;
-extern char device_status_change;
+extern unsigned char device_status_change;
 extern VIRTUAL_DEV virtual_device;
 
 typedef struct

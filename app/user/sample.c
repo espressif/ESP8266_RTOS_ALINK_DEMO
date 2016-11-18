@@ -32,6 +32,11 @@
 #include "alink_export_rawdata.h"
 #include "esp_common.h"
 #include "user_config.h"
+
+#include "freertos/semphr.h"
+
+
+
 #if USER_UART_CTRL_DEV_EN
 #include "user_uart.h" // user uart handler head
 #endif
@@ -62,7 +67,9 @@
 #define ALINK_SECRET_SANDBOX "THnfRRsU5vu6g6m9X6uFyAjUWflgZ0iyGjdEneKm"
 /*设备硬件信息:系统上电后读取的硬件/固件信息,此处为演示需要,直接定义为宏.产品对接时,需要调用自身接口获取*/
 #define DEV_SN "1234567890"
-#define DEV_VERSION "1.0.0;APP2.0;OTA1.0"
+#define DEV_VERSION "1.0.0"
+#define DEV_VERSION_user "1.0.0"
+
 #define DEV_MAC "19:FE:34:A2:C7:1A"	//"AA:CC:CC:CA:CA:01" // need get from device
 #define DEV_CHIPID "3D0044000F47333139373030"	// need get from device
 /*alink-sdk 信息 */
@@ -82,8 +89,20 @@ char *device_attr[5] = { "OnOff_Power", "Color_Temperature", "Light_Brightness",
 const char *main_dev_params =
     "{\"OnOff_Power\": { \"value\": \"%d\" }, \"Color_Temperature\": { \"value\": \"%d\" }, \"Light_Brightness\": { \"value\": \"%d\" }, \"TimeDelay_PowerOff\": { \"value\": \"%d\"}, \"WorkMode_MasterLight\": { \"value\": \"%d\"}}";
 
-char device_status_change = 1;
+unsigned char device_status_change = 1;
 /*设备上报数据,需要客户根据具体业务去实现*/
+
+void debug_printf_data(char *data, int len)
+{
+	int i = 0;
+	os_printf("\n*******print len[%d]******\n",len);
+	for(i=0; i<len; i++)
+	{
+		os_printf("%x ",*(data+i));
+	}
+	os_printf("\n__________end_________\n");
+	return;
+}
 
 #define buffer_size 512
 static int ICACHE_FLASH_ATTR alink_device_post_data(alink_down_cmd_ptr down_cmd)
@@ -92,19 +111,12 @@ static int ICACHE_FLASH_ATTR alink_device_post_data(alink_down_cmd_ptr down_cmd)
 	int ret = ALINK_ERR;
 	//char buffer[1024];
 	char *buffer = NULL;
-//      static int count=0;
+	
+
 	if (device_status_change) {
 
-/*		count++;
-		if(count>20)
-		{
 
-			device_status_change=0;
-			wsf_deb("alink_device_post_raw_data skip");
-			return 0;
-		}*/
-
-		wsf_deb("##[%s][%s|%d]Malloc %u. Available memory:%d.\n", __FILE__, __FUNCTION__, __LINE__,
+		wsf_deb("POST DATA..##[%s][%s|%d]Malloc %u. Available memory:%d.\n", __FILE__, __FUNCTION__, __LINE__,
 			buffer_size, system_get_free_heap_size());
 
 		buffer = (char *)malloc(buffer_size);
@@ -158,12 +170,20 @@ int ICACHE_FLASH_ATTR main_dev_set_device_status_callback(alink_down_cmd_ptr dow
 	json_value *jstr_value;
 	int value = 0, i = 0;
 	char *value_str = NULL;
+#if USER_UART_CTRL_DEV_EN
+	if(dbg_get_recv_times<0xfffffff0)
+		dbg_get_recv_times++;
+	else
+		dbg_get_recv_times = 0;
 
-	wsf_deb("%s %d \n",__FUNCTION__,__LINE__);
+
+	wsf_deb("%s %d,recv_get_t[%d] \n",__FUNCTION__,__LINE__,dbg_get_recv_times);
+#endif
+
 	wsf_deb("%s %d\n%s\n",down_cmd->uuid,down_cmd->method, down_cmd->param);
 
 	jptr = json_parse(down_cmd->param, strlen(down_cmd->param));
-#if USER_UART_CTRL_DEV_EN
+#if 0//USER_UART_CTRL_DEV_EN
 	for (i = 0; i < 5; i++) 
 	{
 		jstr = json_object_object_get_e(jptr, device_attr[i]);
@@ -233,7 +253,9 @@ int ICACHE_FLASH_ATTR main_dev_set_device_status_callback(alink_down_cmd_ptr dow
 #endif
 
 	json_value_free(jptr);
-	device_status_change = 1;   // event send current real device status to the alink server
+
+	if(!device_status_change)
+		device_status_change = 1;   // event send current real device status to the alink server
 
 	return 0;		// alink_device_post_data(down_cmd);
 	/* do your job end! */
@@ -244,7 +266,9 @@ int ICACHE_FLASH_ATTR main_dev_get_device_status_callback(alink_down_cmd_ptr dow
 {
 	wsf_deb("%s %d \n", __FUNCTION__, __LINE__);
 	wsf_deb("%s %d\n%s\n", down_cmd->uuid, down_cmd->method, down_cmd->param);
-	device_status_change = 1;
+
+	if(!device_status_change)
+		device_status_change = 1;   // event send current real device status to the alink server
 
 	return 0;		//alink_device_post_data(down_cmd);
 }
@@ -339,6 +363,8 @@ int ICACHE_FLASH_ATTR alink_device_post_raw_data(void)
 	int len = 8, ret = 0;
 	char rawdata[8] = { 0 };
 	if (device_status_change) {
+
+		ESP_DBG(("********POST DATA*************\n"));
 		wsf_deb("[%s][%d|  Available memory:%d.\n", __FILE__, __LINE__,system_get_free_heap_size());
 
 		delta_time = system_get_time() - delta_time;
@@ -346,7 +372,8 @@ int ICACHE_FLASH_ATTR alink_device_post_raw_data(void)
 		get_device_status(rawdata, len);
 
 		ret = alink_post_device_rawdata(rawdata, len);
-		device_status_change = 0;
+		
+		device_status_change = 0;	// event send current real device status to the alink server
 
 		if (ret) {
 			wsf_err("post failed!\n");
@@ -367,7 +394,9 @@ int ICACHE_FLASH_ATTR rawdata_get_callback(const char *in_rawdata, int in_len, c
 	wsf_deb("%s %d \n", __FUNCTION__, __LINE__);
 	//ret=alink_device_post_raw_data(); //  此例是假设能同步获取到虚拟设备数据, 实际应用中,处理服务器指令是异步方式,需要厂家处理完毕后主动上报一次设备状态
 // do your job end!
-	device_status_change = 1;
+
+	if(!device_status_change)
+		device_status_change = 1;   // event send current real device status to the alink server
 
 	return ret;
 }
@@ -384,7 +413,9 @@ int ICACHE_FLASH_ATTR rawdata_set_callback(char *rawdata, int len)
 	//ret=alink_device_post_raw_data();
 	// do your job end!
 	delta_time = system_get_time();
-	device_status_change = 1;
+
+	if(!device_status_change)
+		device_status_change = 1;   // event send current real device status to the alink server
 	return ret;
 }
 
@@ -450,6 +481,7 @@ void ICACHE_FLASH_ATTR alink_fill_deviceinfo(struct device_info *deviceinfo)
 static int ICACHE_FLASH_ATTR write_config(unsigned char *buffer, unsigned int len)
 {
 	int res = 0, pos = 0;
+	ESP_DBG(("...write cfg....."));
 
 	if (buffer == NULL) {
 		return ALINK_ERR;
@@ -460,11 +492,14 @@ static int ICACHE_FLASH_ATTR write_config(unsigned char *buffer, unsigned int le
 	res = spi_flash_erase_sector(LFILE_START_ADDR / 4096);	//one sector is 4KB 
 	if (res != SPI_FLASH_RESULT_OK) {
 		wsf_err("erase flash data fail\n");
+		return ALINK_ERR;
 	} else {
 		wsf_err("erase flash data %d Byte\n", res);
 	}
 	os_printf("write data:\n");
 
+//	debug_printf_data(buffer, len);
+//	ESP_DBG((">>>>>>>>>>>>>>>"));
 
 	res = spi_flash_write((LFILE_START_ADDR), (uint32 *) buffer, len);
 	if (res != SPI_FLASH_RESULT_OK) {
@@ -481,7 +516,10 @@ static int ICACHE_FLASH_ATTR read_config(unsigned char *buffer, unsigned int len
 
 	int res = 0;
 	int pos = 0;
+	ESP_DBG(("...test read cfg len [%d].....", len));
 	res = spi_flash_read(LFILE_START_ADDR, (uint32 *) buffer, len);
+//	debug_printf_data(buffer, len);
+//	ESP_DBG((">>>>>>>>>>>>>>>"));
 	if (res != SPI_FLASH_RESULT_OK) {
 		wsf_err("read flash data error\n");
 		return ALINK_ERR;
@@ -532,13 +570,17 @@ void set_thread_stack_size(struct thread_stacksize * p_thread_stacksize)
    
 int ICACHE_FLASH_ATTR alink_demo()
 {
+	os_printf("\n[******Alink[%s] boot Module start otabin 111816*******]\n",DEV_VERSION_user);
+
 	struct device_info main_dev;
-	
+	#if USER_UART_CTRL_DEV_EN
+	dbg_get_recv_times = 0;
+	#endif
 	memset(&main_dev, 0, sizeof(main_dev));
 	alink_fill_deviceinfo(&main_dev);	// 必须根据PRD表格更新设备信息
 	alink_set_loglevel(ALINK_LL_DEBUG | ALINK_LL_INFO | ALINK_LL_WARN | ALINK_LL_ERROR);
 	//alink_set_loglevel(ALINK_LL_ERROR);
-	//alink_enable_sandbox_mode();                                      // 线上环境需要注解此函数
+//	alink_enable_sandbox_mode();                                      // 线上环境需要注解此函数
 	main_dev.sys_callback[ALINK_FUNC_SERVER_STATUS] = alink_handler_systemstates_callback;
 	alink_set_callback(ALINK_FUNC_AVAILABLE_MEMORY, print_mem_callback);
 
@@ -546,7 +588,7 @@ int ICACHE_FLASH_ATTR alink_demo()
 	alink_register_cb(ALINK_FUNC_READ_CONFIG, (void *)&read_config);
 	alink_register_cb(ALINK_FUNC_WRITE_CONFIG, (void *)&write_config);
 	alink_register_cb(ALINK_FUNC_GET_STATUS, alink_get_debuginfo);
-	//alink_enable_sandbox(&main_dev);                                      // 线上环境需要注解此函数
+//	alink_enable_sandbox(&main_dev);                                      // 线上环境需要注解此函数
     alink_register_cb(ALINK_FUNC_OTA_FIRMWARE_SAVE, esp_ota_firmware_update);
     alink_register_cb(ALINK_FUNC_OTA_UPGRADE, esp_ota_upgrade);
 	/*start alink-sdk */
@@ -562,29 +604,34 @@ int ICACHE_FLASH_ATTR alink_demo()
 
 	os_printf("%s %d wait time=%d \n", __FUNCTION__, __LINE__, ALINK_WAIT_FOREVER);
 
-	ESP_DBG(("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"));
+	#if 1
 	if(ALINK_OK == alink_wait_connect(NULL, ALINK_WAIT_FOREVER))	//wait main device login, -1 means wait forever
 	{
-#if USER_UART_CTRL_DEV_EN
+
+		ESP_DBG(("CONN OK.."));
+#if 0//USER_UART_CTRL_DEV_EN
 		char send_buf_alink_connOK[]={0x31, 0x31, 0x31, 0x31}; // demo data to tell uart mcu dev, alink conn success
 		uart0_write_data(send_buf_alink_connOK,sizeof(send_buf_alink_connOK));
 #endif
 	}
 	else
 	{
-#if USER_UART_CTRL_DEV_EN
+#if 0//USER_UART_CTRL_DEV_EN
 		char send_buf_alink_connFailed[]={0x32, 0x32, 0x32, 0x32}; // demo data to tell uart mcu dev, alink conn success
 		uart0_write_data(send_buf_alink_connFailed,sizeof(send_buf_alink_connFailed));
 #endif
 	}
+	#endif
 	if(need_notify_app) {
 		need_notify_app = 0;
-		uint8 macaddr[6];
-		char mac[17+1];
+		uint8 macaddr[6] ={0};
+		char mac[17+1] = {0};
 		if (wifi_get_macaddr(0, macaddr)) {
 			os_printf("macaddr=%02x:%02x:%02x:%02x:%02x:%02x\n", MAC2STR(macaddr));
 			snprintf(mac, sizeof(mac), "%02x:%02x:%02x:%02x:%02x:%02x", MAC2STR(macaddr));
-			zconfig_notify_app(DEV_MODEL, mac, ""); // if not factory reset , 
+			
+		//	aws_notify_app(DEV_MODEL, mac, ""); // if not factory reset , 
+			aws_notify_app();
 		}
 	}
 	//printf("%s %d \n",__FUNCTION__,__LINE__);
@@ -594,7 +641,10 @@ int ICACHE_FLASH_ATTR alink_demo()
 
 
 	/* 设备主动上报数据 */
-	while (sample_running) {
+	
+	if(!device_status_change)
+		device_status_change = 0x01;
+	while(sample_running) {
 
 		//os_printf("%s %d \n",__FUNCTION__,__LINE__);
 #ifdef PASS_THROUGH
@@ -619,10 +669,10 @@ int ICACHE_FLASH_ATTR alink_demo()
 
 char *platform_get_os_version(char os_ver[PLATFORM_OS_VERSION_LEN])
 {
-    return strncpy(os_ver, "ESP-WROOM-02", PLATFORM_OS_VERSION_LEN);
+    return strncpy(os_ver, "1.3.0(68c9e7b", PLATFORM_OS_VERSION_LEN);
 }
 char *platform_get_module_name(char name_str[PLATFORM_MODULE_NAME_LEN])
 {
-    return strncpy(name_str,"1.3.0(68c9e7b)",PLATFORM_MODULE_NAME_LEN);
+    return strncpy(name_str,"ESP-WROOM-02",PLATFORM_MODULE_NAME_LEN);
 }
 
