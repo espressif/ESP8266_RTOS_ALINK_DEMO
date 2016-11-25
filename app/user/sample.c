@@ -68,7 +68,7 @@
 /*设备硬件信息:系统上电后读取的硬件/固件信息,此处为演示需要,直接定义为宏.产品对接时,需要调用自身接口获取*/
 #define DEV_SN "1234567890"
 #define DEV_VERSION "1.0.0"
-#define DEV_VERSION_user "1.0.0"
+
 
 #define DEV_MAC "19:FE:34:A2:C7:1A"	//"AA:CC:CC:CA:CA:01" // need get from device
 #define DEV_CHIPID "3D0044000F47333139373030"	// need get from device
@@ -570,7 +570,7 @@ void set_thread_stack_size(struct thread_stacksize * p_thread_stacksize)
    
 int ICACHE_FLASH_ATTR alink_demo()
 {
-	os_printf("\n[******Alink[%s] boot Module start otabin 111816*******]\n",DEV_VERSION_user);
+	os_printf("\n[******Alink[%s] boot Module start 111816*******]\n",DEV_VERSION);
 
 	struct device_info main_dev;
 	#if USER_UART_CTRL_DEV_EN
@@ -669,7 +669,7 @@ int ICACHE_FLASH_ATTR alink_demo()
 
 char *platform_get_os_version(char os_ver[PLATFORM_OS_VERSION_LEN])
 {
-    return strncpy(os_ver, "1.3.0(68c9e7b", PLATFORM_OS_VERSION_LEN);
+    return strncpy(os_ver, "1.3.0", PLATFORM_OS_VERSION_LEN);
 }
 char *platform_get_module_name(char name_str[PLATFORM_MODULE_NAME_LEN])
 {
