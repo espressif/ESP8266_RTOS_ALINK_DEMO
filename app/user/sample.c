@@ -570,7 +570,7 @@ void set_thread_stack_size(struct thread_stacksize * p_thread_stacksize)
    
 int ICACHE_FLASH_ATTR alink_demo()
 {
-	os_printf("\n[******Alink[%s] boot Module start 111816*******]\n",DEV_VERSION);
+	os_printf("\n[******Alink[%s] boot Module start 120813*******]\n",DEV_VERSION);
 
 	struct device_info main_dev;
 	#if USER_UART_CTRL_DEV_EN

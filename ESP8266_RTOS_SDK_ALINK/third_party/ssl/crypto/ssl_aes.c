@@ -40,6 +40,10 @@
 /* all commented out in skeleton mode */
 #ifndef CONFIG_SSL_SKELETON_MODE
 
+#ifdef MEMLEAK_DEBUG
+static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
+#endif
+
 #define rot1(x) (((x) << 24) | ((x) >> 8))
 #define rot2(x) (((x) << 16) | ((x) >> 16))
 #define rot3(x) (((x) <<  8) | ((x) >> 24))
@@ -179,9 +183,10 @@ void ICACHE_FLASH_ATTR AES_set_key(AES_CTX *ctx, const uint8_t *key,
 {
     int i, ii;
     uint32_t *W, tmp, tmp2;
-    unsigned char *Rcon_ram = malloc(32);
     unsigned char *ip;
     int words;
+
+    unsigned char *Rcon_ram = (unsigned char *)SSL_MALLOC(32);
 
     switch (mode)
     {
@@ -245,7 +250,7 @@ void ICACHE_FLASH_ATTR AES_set_key(AES_CTX *ctx, const uint8_t *key,
         W[i]=W[i-words]^tmp;
     }
 
-    free(Rcon_ram);
+    SSL_FREE(Rcon_ram);
 
     /* copy the iv across */
     memcpy(ctx->iv, iv, 16);

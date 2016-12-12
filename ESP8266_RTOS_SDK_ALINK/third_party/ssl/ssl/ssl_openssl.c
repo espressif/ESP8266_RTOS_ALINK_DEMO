@@ -45,6 +45,10 @@
 #include "ssl/ssl_os_port.h"
 #include "ssl/ssl_ssl.h"
 
+#ifdef MEMLEAK_DEBUG
+static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
+#endif
+
 #define OPENSSL_CTX_ATTR  ((OPENSSL_CTX *)ssl_ctx->bonus_attr)
 
 static char *key_password = NULL;
@@ -67,14 +71,14 @@ typedef struct
 SSL_CTX *ICACHE_FLASH_ATTR SSL_CTX_new(ssl_func_type_t meth)
 {
     SSL_CTX *ssl_ctx = ssl_ctx_new(0, 5);
-    ssl_ctx->bonus_attr = malloc(sizeof(OPENSSL_CTX));
+    ssl_ctx->bonus_attr = SSL_MALLOC(sizeof(OPENSSL_CTX));
     OPENSSL_CTX_ATTR->ssl_func_type = meth;
     return ssl_ctx;
 }
 
 void ICACHE_FLASH_ATTR SSL_CTX_free(SSL_CTX *ssl_ctx)
 {
-    free(ssl_ctx->bonus_attr);
+	SSL_FREE(ssl_ctx->bonus_attr);
     ssl_ctx_free(ssl_ctx);
 }
 

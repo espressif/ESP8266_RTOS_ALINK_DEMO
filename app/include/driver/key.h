@@ -5,12 +5,12 @@
 
 typedef void (* key_function)(void);
 
-#define USER_CFG_KEY_GPIO_NO  			12
-#define USER_CFG_KEY_GPIO_PIN  			GPIO_Pin_12
+#define USER_CFG_KEY_GPIO_NO  			13
+#define USER_CFG_KEY_GPIO_PIN  			GPIO_Pin_13
 
 
-#define USER_CFG_STATUS_LED1_GPIO_NO 	14
-#define USER_CFG_STATUS_LED1_GPIO_PIN 	GPIO_Pin_14
+#define USER_CFG_STATUS_LED1_GPIO_NO 	12
+#define USER_CFG_STATUS_LED1_GPIO_PIN 	GPIO_Pin_12
 
 #define USER_CFG_STATUS_LED2_GPIO_NO 	15
 #define USER_CFG_STATUS_LED2_GPIO_PIN 	GPIO_Pin_15

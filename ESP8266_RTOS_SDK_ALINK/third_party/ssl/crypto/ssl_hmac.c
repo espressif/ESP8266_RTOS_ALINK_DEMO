@@ -37,6 +37,10 @@
 #include "ssl/ssl_os_port.h"
 #include "ssl/ssl_crypto.h"
 
+#ifdef MEMLEAK_DEBUG
+static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
+#endif
+
 /**
  * Perform HMAC-MD5
  * NOTE: does not handle keys larger than the block size.
@@ -45,12 +49,12 @@ void ICACHE_FLASH_ATTR ssl_hmac_md5(const uint8_t *msg, int length, const uint8_
         int key_len, uint8_t *digest)
 {
     MD5_CTX context;
-    uint8_t k_ipad[64];
-    uint8_t k_opad[64];
+    uint8_t *k_ipad = (uint8_t *)SSL_ZALLOC(64);
+    uint8_t *k_opad = (uint8_t *)SSL_ZALLOC(64);
     int i;
 
-    memset(k_ipad, 0, sizeof k_ipad);
-    memset(k_opad, 0, sizeof k_opad);
+//    memset(k_ipad, 0, sizeof k_ipad);
+//    memset(k_opad, 0, sizeof k_opad);
     memcpy(k_ipad, key, key_len);
     memcpy(k_opad, key, key_len);
 
@@ -68,6 +72,8 @@ void ICACHE_FLASH_ATTR ssl_hmac_md5(const uint8_t *msg, int length, const uint8_
     MD5_Update(&context, k_opad, 64);
     MD5_Update(&context, digest, MD5_SIZE);
     MD5_Final(digest, &context);
+    SSL_FREE(k_ipad);
+    SSL_FREE(k_opad);
 }
 
 /**
@@ -78,12 +84,12 @@ void ICACHE_FLASH_ATTR ssl_hmac_sha1(const uint8_t *msg, int length, const uint8
         int key_len, uint8_t *digest)
 {
     SHA1_CTX context;
-    uint8_t k_ipad[64];
-    uint8_t k_opad[64];
+    uint8_t *k_ipad = (uint8_t *)SSL_ZALLOC(64);
+    uint8_t *k_opad = (uint8_t *)SSL_ZALLOC(64);
     int i;
 
-    memset(k_ipad, 0, sizeof k_ipad);
-    memset(k_opad, 0, sizeof k_opad);
+//    memset(k_ipad, 0, sizeof k_ipad);
+//    memset(k_opad, 0, sizeof k_opad);
     memcpy(k_ipad, key, key_len);
     memcpy(k_opad, key, key_len);
 
@@ -101,4 +107,7 @@ void ICACHE_FLASH_ATTR ssl_hmac_sha1(const uint8_t *msg, int length, const uint8
     SHA1_Update(&context, k_opad, 64);
     SHA1_Update(&context, digest, SHA1_SIZE);
     SHA1_Final(digest, &context);
+
+    SSL_FREE(k_ipad);
+    SSL_FREE(k_opad);
 }

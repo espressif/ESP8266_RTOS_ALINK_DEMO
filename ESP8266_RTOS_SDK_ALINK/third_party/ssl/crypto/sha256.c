@@ -35,6 +35,10 @@
 //#include "crypto.h"
 #include "lwip/mem.h"
 
+#ifdef MEMLEAK_DEBUG
+static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
+#endif
+
 #define GET_UINT32(n,b,i)                       \
 {                                               \
     (n) = ((uint32_t) (b)[(i)    ] << 24)       \
@@ -252,7 +256,8 @@ void ICACHE_FLASH_ATTR SHA256_Final(uint8_t *digest, SHA256_CTX *ctx)
     uint32_t last, padn;
     uint32_t high, low;
     uint8_t msglen[8];
-    uint8_t *sha256_padding_ram = malloc(64);
+	
+    uint8_t *sha256_padding_ram = (uint8_t *)SSL_MALLOC(64);
 
     memcpy(sha256_padding_ram, sha256_padding, 64);
 
@@ -278,5 +283,5 @@ void ICACHE_FLASH_ATTR SHA256_Final(uint8_t *digest, SHA256_CTX *ctx)
     PUT_UINT32(ctx->state[6], digest, 24);
     PUT_UINT32(ctx->state[7], digest, 28);
 
-    free(sha256_padding_ram);
+    SSL_FREE(sha256_padding_ram);
 }

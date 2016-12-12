@@ -31,7 +31,7 @@ endif # } PDIR
 
 LDDIR = $(SDK_PATH)/ld
 
-CCFLAGS += -Os -D_PLATFORM_ESPRESSIF_8266__  -lalink -lssl -lcrypto
+CCFLAGS += -Os -D_PLATFORM_ESPRESSIF_8266__  -lalink -lopenssl -lcrypto
 
 TARGET_LDFLAGS =		\
 	-nostdlib		\
