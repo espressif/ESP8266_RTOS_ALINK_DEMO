@@ -65,10 +65,6 @@
 /* all commented out if not used */
 #ifdef CONFIG_SSL_USE_PKCS12
 
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
-#endif
-
 #define BLOCK_SIZE          64
 #define PKCS12_KEY_ID       1
 #define PKCS12_IV_ID        2
@@ -125,8 +121,8 @@ int ICACHE_FLASH_ATTR pkcs8_decode(SSL_CTX *ssl_ctx, SSLObjLoader *ssl_obj, cons
     ret = p8_add_key(ssl_ctx, priv_key);
 
 error:
-	SSL_FREE(version);
-	SSL_FREE(uni_pass);
+    free(version);
+    free(uni_pass);
     return ret;
 }
 
@@ -166,7 +162,7 @@ static char * ICACHE_FLASH_ATTR make_uni_pass(const char *password, int *uni_pas
         password = "";
     }
 
-    uni_pass = (char *)SSL_MALLOC((strlen(password)+1)*2);
+    uni_pass = (char *)malloc((strlen(password)+1)*2);
 
     /* modify the password into a unicode version */
     for (i = 0; i < (int)strlen(password); i++)
@@ -284,7 +280,7 @@ int ICACHE_FLASH_ATTR pkcs12_decode(SSL_CTX *ssl_ctx, SSLObjLoader *ssl_obj, con
         goto error;
 
     auth_safes_len = auth_safes_end - auth_safes_start;
-    auth_safes = SSL_MALLOC(auth_safes_len);
+    auth_safes = malloc(auth_safes_len);
 
     memcpy(auth_safes, &buf[auth_safes_start], auth_safes_len);
 
@@ -419,9 +415,9 @@ int ICACHE_FLASH_ATTR pkcs12_decode(SSL_CTX *ssl_ctx, SSLObjLoader *ssl_obj, con
     }
 
 error:
-	SSL_FREE(version);
-	SSL_FREE(uni_pass);
-	SSL_FREE(auth_safes);
+    free(version);
+    free(uni_pass);
+    free(auth_safes);
     return ret;
 }
 
@@ -474,7 +470,7 @@ static int ICACHE_FLASH_ATTR get_pbe_params(uint8_t *buf, int *offset,
         (*iterations) += iter[i];
     }
 
-    SSL_FREE(iter);
+    free(iter);
     error_code = SSL_OK;       /* got here - we are ok */
 
 error:

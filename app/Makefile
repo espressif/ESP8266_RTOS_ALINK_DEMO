@@ -24,14 +24,13 @@ SPECIAL_MKTARGETS=$(APP_MKTARGETS)
 SUBDIRS=    \
 	user    \
 	driver  \
-	user/user_light/src \
 	user/user_uart/src
 
 endif # } PDIR
 
 LDDIR = $(SDK_PATH)/ld
 
-CCFLAGS += -Os -D_PLATFORM_ESPRESSIF_8266__  -lalink -lopenssl -lcrypto
+CCFLAGS += -Os -D_PLATFORM_ESPRESSIF_8266__  -lalink -lssl -lcrypto
 
 TARGET_LDFLAGS =		\
 	-nostdlib		\
@@ -80,7 +79,6 @@ LINKFLAGS_eagle.app.v6 = \
 	-lcrypto \
 	-lalink \
 	-laws \
-	-lpwm	\
 	-Wl,--end-group
 
 DEPENDS_eagle.app.v6 = \

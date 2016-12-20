@@ -58,28 +58,17 @@ LINKFLAGS_eagle.app.v6 = \
     -u call_user_start	\
 	-Wl,-static						\
 	-Wl,--start-group					\
-	-lcirom \
-	-lcrypto	\
-	-lespconn	\
-	-lespnow	\
-	-lfreertos	\
+	-lminic \
 	-lgcc					\
 	-lhal					\
-	-ljson	\
-	-llwip	\
-	-lmain	\
-	-lmesh	\
-	-lmirom	\
-	-lnet80211	\
-	-lnopoll	\
 	-lphy	\
 	-lpp	\
-	-lpwm	\
-	-lsmartconfig	\
-	-lspiffs	\
-	-lssl	\
+	-lnet80211	\
 	-lwpa	\
-	-lwps		\
+	-lcrypto    \
+	-lmain	\
+	-lfreertos	\
+	-llwip	\
 	$(DEP_LIBS_eagle.app.v6)					\
 	-Wl,--end-group
 

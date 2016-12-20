@@ -25,7 +25,7 @@
 #ifndef __ESP_COMMON_H__
 #define __ESP_COMMON_H__
 
-/** \mainpage ESP8266_RTOS_SDK
+/** \mainpage esp_iot_rtos_sdk
  *
  *    - Misc APIs : misc APIs
  *    - WiFi APIs : WiFi related APIs
@@ -38,7 +38,6 @@
    *    - Sniffer APIs : WiFi sniffer APIs
    *    - WPS APIs : WiFi WPS APIs
    *    - Smartconfig APIs : SmartConfig APIs
-   *    - AirKiss APIs : AirKiss APIs
  *    - Spiffs APIs : Spiffs APIs
  *    - SSC APIs : Simple Serial Command APIs
  *    - System APIs : System APIs
@@ -70,8 +69,8 @@
   *               frequently called functions in RAM, please add IRAM_ATTR before
   *               functions' name.
   *
-  * @attention 3. Network programming use socket, please do not bind to the same port.  
-  * @attention (1). If users want to create 3 or more than 3 TCP connections, please add 
+  * @attention 3. Network programming use socket, please do not bind to the same port.
+  * @attention (1). If users want to create 3 or more than 3 TCP connection, please add 
   *               "TCP_WND = 2 x TCP_MSS;" in "user_init".
   *
   * @attention 4. Priority of the RTOS SDK is 15. xTaskCreate is an interface of

@@ -35,7 +35,7 @@
 
 #include "freertos/semphr.h"
 
-
+#define ALINK_TEST_NORMAL  // normal
 
 #if USER_UART_CTRL_DEV_EN
 #include "user_uart.h" // user uart handler head
@@ -57,14 +57,39 @@
 #define ALINK_KEY "bIjq3G1NcgjSfF9uSeK2"
 #define ALINK_SECRET "W6tXrtzgQHGZqksvJLMdCPArmkecBAdcr2F5tjuF"
 #else
+
+
+#ifdef ALINK_TEST_NORMAL
 #define DEV_MODEL "ALINKTEST_LIVING_LIGHT_SMARTLED"
 #define ALINK_KEY "ljB6vqoLzmP8fGkE6pon"
 #define ALINK_SECRET "YJJZjytOCXDhtQqip4EjWbhR95zTgI92RVjzjyZF"
+
+////////////////////////
+#else
+#define DEV_MODEL "ESPRESSIF_LIVING_LIGHT_ESP_LIGHTING_0101"
+#define ALINK_KEY "GTNpP5yKHlIroL8AXnkL"
+#define ALINK_SECRET "Q1zPOvHkFbkgFGX3BDwDAqFtunOtJqK1pA8pgeKH"
 #endif
+//////////////////////
+
+#endif
+
+#ifdef ALINK_TEST_NORMAL   
+
 #define DEV_MANUFACTURE "ALINKTEST"
 /*sandbox key/secret*/
 #define ALINK_KEY_SANDBOX "dpZZEpm9eBfqzK7yVeLq"
 #define ALINK_SECRET_SANDBOX "THnfRRsU5vu6g6m9X6uFyAjUWflgZ0iyGjdEneKm"
+
+#else
+/////////////////////////////
+#define DEV_MANUFACTURE "ALINKTEST"
+/*sandbox key/secret*/
+#define ALINK_KEY_SANDBOX "dpZZEpm9eBfqzK7yVeLq"
+#define ALINK_SECRET_SANDBOX "THnfRRsU5vu6g6m9X6uFyAjUWflgZ0iyGjdEneKm"
+#endif
+
+//////////////////////////////////
 /*设备硬件信息:系统上电后读取的硬件/固件信息,此处为演示需要,直接定义为宏.产品对接时,需要调用自身接口获取*/
 #define DEV_SN "1234567890"
 #define DEV_VERSION "1.0.0"
@@ -73,6 +98,8 @@
 #define DEV_MAC "19:FE:34:A2:C7:1A"	//"AA:CC:CC:CA:CA:01" // need get from device
 #define DEV_CHIPID "3D0044000F47333139373030"	// need get from device
 /*alink-sdk 信息 */
+
+struct device_info main_dev;
 
 extern void alink_sleep(int);
 /*do your job here*/
@@ -92,7 +119,7 @@ const char *main_dev_params =
 unsigned char device_status_change = 1;
 /*设备上报数据,需要客户根据具体业务去实现*/
 
-void debug_printf_data(char *data, int len)
+void ICACHE_FLASH_ATTR debug_printf_data(char *data, int len)
 {
 	int i = 0;
 	os_printf("\n*******print len[%d]******\n",len);
@@ -109,12 +136,13 @@ static int ICACHE_FLASH_ATTR alink_device_post_data(alink_down_cmd_ptr down_cmd)
 {
 	alink_up_cmd up_cmd;
 	int ret = ALINK_ERR;
-	//char buffer[1024];
-	char *buffer = NULL;
+	char buffer[256] = {0};
+//	char *buffer = NULL;
 	
 
 	if (device_status_change) {
 
+		/*
 
 		wsf_deb("POST DATA..##[%s][%s|%d]Malloc %u. Available memory:%d.\n", __FILE__, __FUNCTION__, __LINE__,
 			buffer_size, system_get_free_heap_size());
@@ -124,6 +152,7 @@ static int ICACHE_FLASH_ATTR alink_device_post_data(alink_down_cmd_ptr down_cmd)
 			return -1;
 
 		memset(buffer, 0, buffer_size);
+*/
 
 		sprintf(buffer, main_dev_params, virtual_device.power,
 			virtual_device.temp_value, virtual_device.light_value,
@@ -142,16 +171,18 @@ static int ICACHE_FLASH_ATTR alink_device_post_data(alink_down_cmd_ptr down_cmd)
 			wsf_err("post failed!\n");
 			alink_sleep(2000);
 		} else {
-			wsf_deb("dev post data success!\n");
+		//	wsf_deb("dev post data success!\n");
 			device_status_change = 0;
 		}
-
+/*
 		if (buffer)
 			free(buffer);
 		wsf_deb("##[%s][%s][%d]  Free |Aviable Memory|%5d| \n", __FILE__, __FUNCTION__, __LINE__,
 			system_get_free_heap_size());
 
 		stack_free_size();
+	*/	
+
 	}
 	return ret;
 
@@ -180,7 +211,7 @@ int ICACHE_FLASH_ATTR main_dev_set_device_status_callback(alink_down_cmd_ptr dow
 	wsf_deb("%s %d,recv_get_t[%d] \n",__FUNCTION__,__LINE__,dbg_get_recv_times);
 #endif
 
-	wsf_deb("%s %d\n%s\n",down_cmd->uuid,down_cmd->method, down_cmd->param);
+//	wsf_deb("%s %d\n%s\n",down_cmd->uuid,down_cmd->method, down_cmd->param);
 
 	jptr = json_parse(down_cmd->param, strlen(down_cmd->param));
 #if 0//USER_UART_CTRL_DEV_EN
@@ -545,13 +576,13 @@ int ICACHE_FLASH_ATTR alink_get_debuginfo(info_type type, char *status)
 	}  
 	return 0;
 }
-int esp_ota_firmware_update( char * buffer, int len)
+int ICACHE_FLASH_ATTR esp_ota_firmware_update( char * buffer, int len)
 {
     os_printf("esp_ota_firmware_update \n");
    return upgrade_download(buffer , len);
 }
 
-int esp_ota_upgrade(void)
+int ICACHE_FLASH_ATTR esp_ota_upgrade(void)
 {
     os_printf("esp_ota_upgrade \n");
     system_upgrade_reboot();
@@ -560,7 +591,7 @@ int esp_ota_upgrade(void)
 extern int need_notify_app;
 extern int  need_factory_reset ;
 
-void set_thread_stack_size(struct thread_stacksize * p_thread_stacksize)
+void ICACHE_FLASH_ATTR set_thread_stack_size(struct thread_stacksize * p_thread_stacksize)
 {
     p_thread_stacksize->alink_main_thread_size = 0xc00;
     p_thread_stacksize->send_work_thread_size = 0x800;
@@ -570,9 +601,6 @@ void set_thread_stack_size(struct thread_stacksize * p_thread_stacksize)
    
 int ICACHE_FLASH_ATTR alink_demo()
 {
-	os_printf("\n[******Alink[%s] boot Module start 120813*******]\n",DEV_VERSION);
-
-	struct device_info main_dev;
 	#if USER_UART_CTRL_DEV_EN
 	dbg_get_recv_times = 0;
 	#endif
@@ -581,6 +609,8 @@ int ICACHE_FLASH_ATTR alink_demo()
 	alink_set_loglevel(ALINK_LL_DEBUG | ALINK_LL_INFO | ALINK_LL_WARN | ALINK_LL_ERROR);
 	//alink_set_loglevel(ALINK_LL_ERROR);
 //	alink_enable_sandbox_mode();                                      // 线上环境需要注解此函数
+	main_dev.sys_callback[ALINK_FUNC_SERVER_STATUS] = alink_handler_systemstates_callback;
+	
 	main_dev.sys_callback[ALINK_FUNC_SERVER_STATUS] = alink_handler_systemstates_callback;
 	alink_set_callback(ALINK_FUNC_AVAILABLE_MEMORY, print_mem_callback);
 
@@ -658,7 +688,7 @@ int ICACHE_FLASH_ATTR alink_demo()
 			need_factory_reset = 0;
 		alink_factory_reset();
 		}
-		alink_sleep(1000);
+		alink_sleep(500);
 	}
 
 	/*  设备退出alink-sdk */

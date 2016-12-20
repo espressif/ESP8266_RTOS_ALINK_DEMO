@@ -37,10 +37,6 @@
 #include "ssl/ssl_crypto.h"
 #include "ssl/ssl_crypto_misc.h"
 
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
-#endif
-
 struct tm
 {
   int tm_sec;                   /* Seconds.     [0-60] (1 leap second) */
@@ -178,7 +174,7 @@ int ICACHE_FLASH_ATTR asn1_get_int(const uint8_t *buf, int *offset, uint8_t **ob
         (*offset)++;
     }
 
-    *object = (uint8_t *)SSL_MALLOC(len);
+    *object = (uint8_t *)malloc(len);
     memcpy(*object, &buf[*offset], len);
     *offset += len;
 
@@ -232,19 +228,19 @@ int ICACHE_FLASH_ATTR asn1_get_private_key(const uint8_t *buf, int len, RSA_CTX 
             modulus, mod_len, pub_exp, pub_len, priv_exp, priv_len,
             p, p_len, q, p_len, dP, dP_len, dQ, dQ_len, qInv, qInv_len);
 
-    SSL_FREE(p);
-    SSL_FREE(q);
-    SSL_FREE(dP);
-    SSL_FREE(dQ);
-    SSL_FREE(qInv);
+    free(p);
+    free(q);
+    free(dP);
+    free(dQ);
+    free(qInv);
 #else
     RSA_priv_key_new(rsa_ctx, 
             modulus, mod_len, pub_exp, pub_len, priv_exp, priv_len);
 #endif
 
-    SSL_FREE(modulus);
-    SSL_FREE(priv_exp);
-    SSL_FREE(pub_exp);
+    free(modulus);
+    free(priv_exp);
+    free(pub_exp);
     return X509_OK;
 }
 
@@ -413,7 +409,7 @@ static int ICACHE_FLASH_ATTR asn1_get_printable_str(const uint8_t *buf, int *off
     if (asn1_type == ASN1_UNICODE_STR)
     {
         int i;
-        *str = (char *)SSL_MALLOC(len/2+1);     /* allow for null */
+        *str = (char *)malloc(len/2+1);     /* allow for null */
 
         for (i = 0; i < len; i += 2)
             (*str)[i/2] = buf[*offset + i + 1];
@@ -422,7 +418,7 @@ static int ICACHE_FLASH_ATTR asn1_get_printable_str(const uint8_t *buf, int *off
     }
     else
     {
-        *str = (char *)SSL_MALLOC(len+1);       /* allow for null */
+        *str = (char *)malloc(len+1);       /* allow for null */
         memcpy(*str, &buf[*offset], len);
         (*str)[len] = 0;                    /* null terminate */
     }
@@ -457,7 +453,7 @@ int ICACHE_FLASH_ATTR asn1_name(const uint8_t *cert, int *offset, char *dn[])
 
         if (asn1_get_printable_str(cert, offset, &tmp) < 0)
         {
-        	SSL_FREE(tmp);
+            free(tmp);
             goto end_name;
         }
 
@@ -477,7 +473,7 @@ int ICACHE_FLASH_ATTR asn1_name(const uint8_t *cert, int *offset, char *dn[])
 
         if (found == 0) /* not found so get rid of it */
         {
-        	SSL_FREE(tmp);
+            free(tmp);
         }
     }
 
@@ -509,8 +505,8 @@ int ICACHE_FLASH_ATTR asn1_public_key(const uint8_t *cert, int *offset, X509_CTX
 
     RSA_pub_key_new(&x509_ctx->rsa_ctx, modulus, mod_len, pub_exp, pub_len);
 
-    SSL_FREE(modulus);
-    SSL_FREE(pub_exp);
+    free(modulus);
+    free(pub_exp);
     ret = X509_OK;
 
 end_pub_key:
@@ -530,7 +526,7 @@ int ICACHE_FLASH_ATTR asn1_signature(const uint8_t *cert, int *offset, X509_CTX 
 
     x509_ctx->sig_len = get_asn1_length(cert, offset)-1;
     (*offset)++;            /* ignore bit string padding bits */
-    x509_ctx->signature = (uint8_t *)SSL_MALLOC(x509_ctx->sig_len);
+    x509_ctx->signature = (uint8_t *)malloc(x509_ctx->sig_len);
     memcpy(x509_ctx->signature, &cert[*offset], x509_ctx->sig_len);
     *offset += x509_ctx->sig_len;
     ret = X509_OK;
@@ -571,7 +567,7 @@ void ICACHE_FLASH_ATTR remove_ca_certs(CA_CERT_CTX *ca_cert_ctx)
         ca_cert_ctx->cert[i++] = NULL;
     }
 
-    SSL_FREE(ca_cert_ctx);
+    free(ca_cert_ctx);
 }
 
 /*

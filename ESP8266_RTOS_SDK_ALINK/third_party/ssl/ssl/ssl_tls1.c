@@ -37,10 +37,6 @@
 
 #include "lwip/sockets.h"
 
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
-#endif
-
 /* The session expiry time */
 #define SSL_EXPIRY_TIME     (CONFIG_SSL_EXPIRY_TIME*3600)
 
@@ -166,13 +162,13 @@ void DISPLAY_BYTES(SSL *ssl, const char *format,
  */
 EXP_FUNC SSL_CTX *STDCALL ICACHE_FLASH_ATTR ssl_ctx_new(uint32_t options, int num_sessions)
 {
-    SSL_CTX *ssl_ctx = (SSL_CTX *)SSL_ZALLOC(sizeof(SSL_CTX));
+    SSL_CTX *ssl_ctx = (SSL_CTX *)zalloc(sizeof (SSL_CTX));
     ssl_ctx->options = options;
     RNG_initialize();
 
     if (load_key_certs(ssl_ctx) < 0)
     {
-    	SSL_FREE(ssl_ctx);  /* can't load our key/certificate pair, so die */
+        free(ssl_ctx);  /* can't load our key/certificate pair, so die */
         return NULL;
     }
 
@@ -186,7 +182,7 @@ EXP_FUNC SSL_CTX *STDCALL ICACHE_FLASH_ATTR ssl_ctx_new(uint32_t options, int nu
     if (num_sessions)
     {
         ssl_ctx->ssl_sessions = (SSL_SESSION **)
-                       SSL_ZALLOC(num_sessions*sizeof(SSL_SESSION *));
+                        zalloc(num_sessions*sizeof(SSL_SESSION *));
     }
 #endif
 
@@ -219,13 +215,13 @@ EXP_FUNC void STDCALL ICACHE_FLASH_ATTR ssl_ctx_free(SSL_CTX *ssl_ctx)
     for (i = 0; i < ssl_ctx->num_sessions; i++)
         session_free(ssl_ctx->ssl_sessions, i);
 
-    SSL_FREE(ssl_ctx->ssl_sessions);
+    free(ssl_ctx->ssl_sessions);
 #endif
 
     i = 0;
     while (i < CONFIG_SSL_MAX_CERTS && ssl_ctx->certs[i].buf)
     {
-    	SSL_FREE(ssl_ctx->certs[i].buf);
+        free(ssl_ctx->certs[i].buf);
         ssl_ctx->certs[i++].buf = NULL;
     }
 
@@ -238,7 +234,7 @@ EXP_FUNC void STDCALL ICACHE_FLASH_ATTR ssl_ctx_free(SSL_CTX *ssl_ctx)
     RSA_free(ssl_ctx->rsa_ctx);
     RNG_terminate();
 //	ssl_printf("%s %p\n", __func__,ssl_ctx);
-    SSL_FREE(ssl_ctx);
+    free(ssl_ctx);
 }
 
 /*
@@ -247,16 +243,14 @@ EXP_FUNC void STDCALL ICACHE_FLASH_ATTR ssl_ctx_free(SSL_CTX *ssl_ctx)
 EXP_FUNC void STDCALL ICACHE_FLASH_ATTR ssl_free(SSL *ssl)
 {
     SSL_CTX *ssl_ctx;
-	os_printf("ssl_free:Aviable Memory|%d\n",system_get_free_heap_size());
+
     if (ssl == NULL)        /* just ignore null pointers */
         return;
 
     /* only notify if we weren't notified first */
     /* spec says we must notify when we are dying */
-    if (!IS_SET_SSL_FLAG(SSL_SENT_CLOSE_NOTIFY)){
+    if (!IS_SET_SSL_FLAG(SSL_SENT_CLOSE_NOTIFY))
       send_alert(ssl, SSL_ALERT_CLOSE_NOTIFY);
-	  kill_ssl_session(ssl->ssl_ctx->ssl_sessions, ssl);
-	}
 //		ssl_printf("%s %d\n", __func__, __LINE__);	  
 
     ssl_ctx = ssl->ssl_ctx;
@@ -277,15 +271,14 @@ EXP_FUNC void STDCALL ICACHE_FLASH_ATTR ssl_free(SSL *ssl)
     SSL_CTX_UNLOCK(ssl_ctx->mutex);
 
     /* may already be free - but be sure */
-    SSL_FREE(ssl->encrypt_ctx);
-    SSL_FREE(ssl->decrypt_ctx);
+    free(ssl->encrypt_ctx);
+    free(ssl->decrypt_ctx);
     disposable_free(ssl);
 #ifdef CONFIG_SSL_CERT_VERIFICATION
     x509_free(ssl->x509_ctx);
 #endif
-
-	SSL_FREE(ssl->bm_all_data);
-    SSL_FREE(ssl);
+    free(ssl->bm_all_data);
+    free(ssl);
 }
 
 /*
@@ -373,7 +366,7 @@ int ICACHE_FLASH_ATTR add_cert(SSL_CTX *ssl_ctx, const uint8_t *buf, int len)
 
     ssl_cert = &ssl_ctx->certs[i];
     ssl_cert->size = len;
-    ssl_cert->buf = (uint8_t *)SSL_MALLOC(len);
+    ssl_cert->buf = (uint8_t *)malloc(len);
     memcpy(ssl_cert->buf, buf, len);
     ssl_ctx->chain_length++;
     len -= offset;
@@ -401,7 +394,7 @@ int ICACHE_FLASH_ATTR add_cert_auth(SSL_CTX *ssl_ctx, const uint8_t *buf, int le
     CA_CERT_CTX *ca_cert_ctx;
 
     if (ssl_ctx->ca_cert_ctx == NULL)
-        ssl_ctx->ca_cert_ctx = (CA_CERT_CTX *)SSL_ZALLOC(sizeof(CA_CERT_CTX));
+        ssl_ctx->ca_cert_ctx = (CA_CERT_CTX *)zalloc(sizeof(CA_CERT_CTX));
 
     ca_cert_ctx = ssl_ctx->ca_cert_ctx;
 
@@ -573,7 +566,7 @@ static const cipher_info_t *ICACHE_FLASH_ATTR get_cipher_info(uint8_t cipher)
  */
 SSL *ICACHE_FLASH_ATTR ssl_new(SSL_CTX *ssl_ctx, int client_fd)
 {
-    SSL *ssl = (SSL *)SSL_ZALLOC(sizeof(SSL));
+    SSL *ssl = (SSL *)zalloc(sizeof(SSL));
     ssl_fragment_length_negotiation(ssl, SSL_MAX_FRAG_LEN_2048);
     ssl->ssl_ctx = ssl_ctx;
     ssl->need_bytes = SSL_RECORD_SIZE;      /* need a record */
@@ -659,7 +652,7 @@ static void ICACHE_FLASH_ATTR add_hmac_digest(SSL *ssl, int mode, uint8_t *hmac_
         const uint8_t *buf, int buf_len, uint8_t *hmac_buf)
 {
     int hmac_len = buf_len + 8 + SSL_RECORD_SIZE;
-    uint8_t *t_buf = (uint8_t *)SSL_ZALLOC(hmac_len+10);
+    uint8_t *t_buf = (uint8_t *)malloc(hmac_len+10);
 
     memcpy(t_buf, (mode == SSL_SERVER_WRITE || mode == SSL_CLIENT_WRITE) ?
                     ssl->write_sequence : ssl->read_sequence, 8);
@@ -672,7 +665,7 @@ static void ICACHE_FLASH_ATTR add_hmac_digest(SSL *ssl, int mode, uint8_t *hmac_
             ssl->cipher_info->digest_size, hmac_buf);
 
     /* add by wujg */
-    SSL_FREE(t_buf);
+    free(t_buf);
     
 #if 0
     print_blob("record", hmac_header, SSL_RECORD_SIZE);
@@ -770,7 +763,7 @@ void ICACHE_FLASH_ATTR add_packet(SSL *ssl, const uint8_t *pkt, int len)
 static void ICACHE_FLASH_ATTR p_hash_md5(const uint8_t *sec, int sec_len, 
         uint8_t *seed, int seed_len, uint8_t *out, int olen)
 {
-	uint8_t* a1 = (uint8_t *)SSL_ZALLOC(128);
+    uint8_t a1[128];
 
     /* A(1) */
     ssl_hmac_md5(seed, seed_len, sec, sec_len, a1);
@@ -790,7 +783,6 @@ static void ICACHE_FLASH_ATTR p_hash_md5(const uint8_t *sec, int sec_len,
         /* work out the actual hash */
         ssl_hmac_md5(a1, MD5_SIZE+seed_len, sec, sec_len, out);
     }
-    SSL_FREE (a1);
 }
 
 /**
@@ -799,7 +791,7 @@ static void ICACHE_FLASH_ATTR p_hash_md5(const uint8_t *sec, int sec_len,
 static void ICACHE_FLASH_ATTR p_hash_sha1(const uint8_t *sec, int sec_len, 
         uint8_t *seed, int seed_len, uint8_t *out, int olen)
 {
-	uint8_t* a1 = (uint8_t *)SSL_ZALLOC(128);
+    uint8_t a1[128];
 
     /* A(1) */
     ssl_hmac_sha1(seed, seed_len, sec, sec_len, a1);
@@ -819,7 +811,6 @@ static void ICACHE_FLASH_ATTR p_hash_sha1(const uint8_t *sec, int sec_len,
         /* work out the actual hash */
         ssl_hmac_sha1(a1, SHA1_SIZE+seed_len, sec, sec_len, out);
     }
-    SSL_FREE(a1);
 }
 
 /**
@@ -830,8 +821,8 @@ static void ICACHE_FLASH_ATTR prf(const uint8_t *sec, int sec_len, uint8_t *seed
 {
     int len, i;
     const uint8_t *S1, *S2;
-    uint8_t *xbuf = (uint8_t *)SSL_ZALLOC(256); /* needs to be > the amount of key data */
-    uint8_t *ybuf = (uint8_t *)SSL_ZALLOC(256); /* needs to be > the amount of key data */
+    uint8_t xbuf[256]; /* needs to be > the amount of key data */
+    uint8_t ybuf[256]; /* needs to be > the amount of key data */
 
     len = sec_len/2;
     S1 = sec;
@@ -843,8 +834,6 @@ static void ICACHE_FLASH_ATTR prf(const uint8_t *sec, int sec_len, uint8_t *seed
 
     for (i = 0; i < olen; i++)
         out[i] = xbuf[i] ^ ybuf[i];
-    SSL_FREE(xbuf);
-    SSL_FREE(ybuf);
 }
 
 /**
@@ -853,15 +842,12 @@ static void ICACHE_FLASH_ATTR prf(const uint8_t *sec, int sec_len, uint8_t *seed
  */
 void ICACHE_FLASH_ATTR generate_master_secret(SSL *ssl, const uint8_t *premaster_secret)
 {
-  //  uint8_t buf[128];   /* needs to be > 13+32+32 in size */
-  	uint8_t* buf = (uint8_t *)SSL_ZALLOC(128);
-
+    uint8_t buf[128];   /* needs to be > 13+32+32 in size */
     strcpy((char *)buf, "master secret");
     memcpy(&buf[13], ssl->dc->client_random, SSL_RANDOM_SIZE);
     memcpy(&buf[45], ssl->dc->server_random, SSL_RANDOM_SIZE);
     prf(premaster_secret, SSL_SECRET_SIZE, buf, 77, ssl->dc->master_secret,
             SSL_SECRET_SIZE);
-    SSL_FREE(buf);
 }
 
 /**
@@ -870,13 +856,11 @@ void ICACHE_FLASH_ATTR generate_master_secret(SSL *ssl, const uint8_t *premaster
 static void ICACHE_FLASH_ATTR generate_key_block(uint8_t *client_random, uint8_t *server_random,
         uint8_t *master_secret, uint8_t *key_block, int key_block_size)
 {
-	uint8_t* buf = (uint8_t *)SSL_ZALLOC(128);
-	
+    uint8_t buf[128];
     strcpy((char *)buf, "key expansion");
     memcpy(&buf[13], server_random, SSL_RANDOM_SIZE);
     memcpy(&buf[45], client_random, SSL_RANDOM_SIZE);
     prf(master_secret, SSL_SECRET_SIZE, buf, 77, key_block, key_block_size);
-    SSL_FREE(buf);
 }
 
 /** 
@@ -885,8 +869,7 @@ static void ICACHE_FLASH_ATTR generate_key_block(uint8_t *client_random, uint8_t
  */
 void ICACHE_FLASH_ATTR finished_digest(SSL *ssl, const char *label, uint8_t *digest)
 {
-	uint8_t* mac_buf = (uint8_t *)SSL_ZALLOC(128);
-
+    uint8_t mac_buf[128]; 
     uint8_t *q = mac_buf;
     MD5_CTX md5_ctx = ssl->dc->md5_ctx;
     SHA1_CTX sha1_ctx = ssl->dc->sha1_ctx;
@@ -919,7 +902,6 @@ void ICACHE_FLASH_ATTR finished_digest(SSL *ssl, const char *label, uint8_t *dig
     print_blob("mac_buf", mac_buf, q-mac_buf);
     print_blob("finished digest", digest, SSL_FINISHED_HASH_SIZE);
 #endif
-    SSL_FREE(mac_buf);
 }   
     
 /**
@@ -932,7 +914,7 @@ static void *ICACHE_FLASH_ATTR crypt_new(SSL *ssl, uint8_t *key, uint8_t *iv, in
 #ifndef CONFIG_SSL_SKELETON_MODE
         case SSL_AES128_SHA:
             {
-                AES_CTX *aes_ctx = (AES_CTX *)SSL_MALLOC(sizeof(AES_CTX));
+                AES_CTX *aes_ctx = (AES_CTX *)malloc(sizeof(AES_CTX));
                 AES_set_key(aes_ctx, key, iv, AES_MODE_128);
 
                 if (is_decrypt)
@@ -945,7 +927,7 @@ static void *ICACHE_FLASH_ATTR crypt_new(SSL *ssl, uint8_t *key, uint8_t *iv, in
 
         case SSL_AES256_SHA:
             {
-                AES_CTX *aes_ctx = (AES_CTX *)SSL_MALLOC(sizeof(AES_CTX));
+                AES_CTX *aes_ctx = (AES_CTX *)malloc(sizeof(AES_CTX));
                 AES_set_key(aes_ctx, key, iv, AES_MODE_256);
 
                 if (is_decrypt)
@@ -960,7 +942,7 @@ static void *ICACHE_FLASH_ATTR crypt_new(SSL *ssl, uint8_t *key, uint8_t *iv, in
 #endif
         case SSL_RC4_128_SHA:
             {
-                RC4_CTX *rc4_ctx = (RC4_CTX *)SSL_MALLOC(sizeof(RC4_CTX));
+                RC4_CTX *rc4_ctx = (RC4_CTX *)malloc(sizeof(RC4_CTX));
                 RC4_setup(rc4_ctx, key, 16);
                 return (void *)rc4_ctx;
             }
@@ -1099,13 +1081,13 @@ int ICACHE_FLASH_ATTR send_packet(SSL *ssl, uint8_t protocol, const uint8_t *in,
                         ssl->cipher_info->iv_size)
         {
             uint8_t iv_size = ssl->cipher_info->iv_size;
-            uint8_t *t_buf = (uint8_t *)SSL_ZALLOC(msg_length + iv_size);
+            uint8_t *t_buf = (uint8_t *)malloc(msg_length + iv_size);
             memcpy(t_buf + iv_size, ssl->bm_data, msg_length);
             if (get_random(iv_size, t_buf) < 0)
                 return SSL_NOT_OK;
             msg_length += iv_size;
             memcpy(ssl->bm_data, t_buf, msg_length);
-            SSL_FREE(t_buf); /* add by wujg */
+            free(t_buf); /* add by wujg */
         }
 
         /* now encrypt the packet */
@@ -1147,7 +1129,7 @@ static int ICACHE_FLASH_ATTR set_key_block(SSL *ssl, int is_write)
     /* only do once in a handshake */
     if (ssl->dc->key_block == NULL)
     {
-        ssl->dc->key_block = (uint8_t *)SSL_MALLOC(ciph_info->key_block_size);
+        ssl->dc->key_block = (uint8_t *)malloc(ciph_info->key_block_size);
 
 #if 0
         print_blob("client", ssl->dc->client_random, 32);
@@ -1192,18 +1174,18 @@ static int ICACHE_FLASH_ATTR set_key_block(SSL *ssl, int is_write)
     }
 #endif
 
-    SSL_FREE(is_write ? ssl->encrypt_ctx : ssl->decrypt_ctx);
+    free(is_write ? ssl->encrypt_ctx : ssl->decrypt_ctx);
 
     /* now initialise the ciphers */
     if (is_client)
     {
-        char *server_finished_ram = (char *)SSL_ZALLOC(24);
+        char *server_finished_ram = (char *)zalloc(24);
 
         system_get_string_from_flash(server_finished, server_finished_ram, 24);
 
         finished_digest(ssl, server_finished_ram, ssl->dc->final_finish_mac);
 
-        SSL_FREE(server_finished_ram);
+        free(server_finished_ram);
 
         if (is_write)
             ssl->encrypt_ctx = crypt_new(ssl, client_key, client_iv, 0);
@@ -1212,13 +1194,13 @@ static int ICACHE_FLASH_ATTR set_key_block(SSL *ssl, int is_write)
     }
     else
     {
-        char *client_finished_ram = (char *)SSL_ZALLOC(24);
+        char *client_finished_ram = (char *)zalloc(24);
 
         system_get_string_from_flash(client_finished, client_finished_ram, 24);
 
         finished_digest(ssl, client_finished_ram, ssl->dc->final_finish_mac);
 
-        SSL_FREE(client_finished_ram);
+        free(client_finished_ram);
 
         if (is_write)
             ssl->encrypt_ctx = crypt_new(ssl, server_key, server_iv, 0);
@@ -1239,10 +1221,8 @@ int ICACHE_FLASH_ATTR basic_read(SSL *ssl, uint8_t **in_data)
     int read_len, is_client = IS_SET_SSL_FLAG(SSL_IS_CLIENT);
     uint8_t *buf = ssl->bm_data;
 
-begain:
     /* do we violate the spec with the message size?  */
-	//os_printf("basic_read index %u\n", ssl->bm_read_index);
-
+	os_printf("basic_read index %u\n", ssl->bm_read_index);
 	if (ssl->bm_read_index > ssl->max_fragme_length + RT_EXTRA) {
 		ret = SSL_ERROR_INVALID_PROT_MSG;
 		goto error;
@@ -1256,11 +1236,9 @@ begain:
 #ifdef WIN32
         if (GetLastError() == WSAEWOULDBLOCK)
 #else
-        if (errno == EAGAIN || errno == EWOULDBLOCK){
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
 #endif
-			ret = SSL_OK;
-			goto finish;
-		}
+            return 0;
     }
 
     /* connection has gone, so die */
@@ -1279,10 +1257,7 @@ begain:
 
     /* haven't quite got what we want, so try again later */
     if (ssl->got_bytes < ssl->need_bytes)
-    {
-		ret = SSL_OK;
-		goto finish;
-     }
+        return SSL_OK;
 
     read_len = ssl->got_bytes;
     ssl->got_bytes = 0;
@@ -1439,12 +1414,7 @@ error:
     if (ret < SSL_OK && in_data)/* if all wrong, then clear this buffer ptr */
         *in_data = NULL;
 
-finish:
-	if (ssl->record_type == PT_APP_PROTOCOL_DATA){
-		if (ret == SSL_OK)
-			goto begain;
-	}
-
+	//printf("ret: %d\n",ret);
     return ret;
 }
 
@@ -1527,8 +1497,8 @@ int ICACHE_FLASH_ATTR send_finished(SSL *ssl)
     uint8_t buf[SSL_FINISHED_HASH_SIZE+4] = {
         HS_FINISHED, 0, 0, SSL_FINISHED_HASH_SIZE };
 
-    char *client_finished_ram = (char *)SSL_ZALLOC(24);
-    char *server_finished_ram = (char *)SSL_ZALLOC(24);
+    char *client_finished_ram = (char *)zalloc(24);
+    char *server_finished_ram = (char *)zalloc(24);
 
     system_get_string_from_flash(client_finished, client_finished_ram, 24);
     system_get_string_from_flash(server_finished, server_finished_ram, 24);
@@ -1538,8 +1508,8 @@ int ICACHE_FLASH_ATTR send_finished(SSL *ssl)
         IS_SET_SSL_FLAG(SSL_IS_CLIENT) ?
                 client_finished_ram : server_finished_ram, &buf[4]);
 
-    SSL_FREE(client_finished_ram);
-    SSL_FREE(server_finished_ram);
+    free(client_finished_ram);
+    free(server_finished_ram);
 
 #ifndef CONFIG_SSL_SKELETON_MODE
     /* store in the session cache */
@@ -1700,7 +1670,7 @@ void ICACHE_FLASH_ATTR disposable_new(SSL *ssl)
 {
     if (ssl->dc == NULL)
     {
-        ssl->dc = (DISPOSABLE_CTX *)SSL_ZALLOC(sizeof(DISPOSABLE_CTX));
+        ssl->dc = (DISPOSABLE_CTX *)zalloc(sizeof(DISPOSABLE_CTX));
         MD5_Init(&ssl->dc->md5_ctx);
         SHA1_Init(&ssl->dc->sha1_ctx);
     }
@@ -1713,9 +1683,9 @@ void ICACHE_FLASH_ATTR disposable_free(SSL *ssl)
 {
     if (ssl->dc)
     {
-    	SSL_FREE(ssl->dc->key_block);
+        free(ssl->dc->key_block);
         memset(ssl->dc, 0, sizeof(DISPOSABLE_CTX));
-        SSL_FREE(ssl->dc);
+        free(ssl->dc);
         ssl->dc = NULL;
     }
 
@@ -1776,7 +1746,7 @@ SSL_SESSION *ICACHE_FLASH_ATTR ssl_session_update(int max_sessions, SSL_SESSION 
         if (ssl_sessions[i] == NULL)
         {
             /* perfect, this will do */
-            ssl_sessions[i] = (SSL_SESSION *)SSL_ZALLOC(sizeof(SSL_SESSION));// 84KB
+            ssl_sessions[i] = (SSL_SESSION *)zalloc(sizeof(SSL_SESSION));
             ssl_sessions[i]->conn_time = tm;
             ssl->session_index = i;
             SSL_CTX_UNLOCK(ssl->ssl_ctx->mutex);
@@ -1806,7 +1776,7 @@ static void ICACHE_FLASH_ATTR session_free(SSL_SESSION *ssl_sessions[], int sess
 {
     if (ssl_sessions[sess_index])
     {
-    	SSL_FREE(ssl_sessions[sess_index]);
+        free(ssl_sessions[sess_index]);
         ssl_sessions[sess_index] = NULL;
     }
 }
@@ -2304,10 +2274,10 @@ bool ICACHE_FLASH_ATTR ssl_fragment_length_negotiation(SSL* ssl, int fragmet_lev
 
 	if (nago_flag){
 		if (ssl->bm_all_data != NULL){
-			SSL_FREE(ssl->bm_all_data);
+			free(ssl->bm_all_data);
 			ssl->bm_all_data = NULL;
 		}
-		ssl->bm_all_data = (uint8_t*)SSL_ZALLOC(ssl->max_fragme_length + RT_EXTRA);
+		ssl->bm_all_data = (uint8_t*)zalloc(ssl->max_fragme_length + RT_EXTRA);
 		if (NULL == ssl->bm_all_data)
 			nago_flag = false;
 	}

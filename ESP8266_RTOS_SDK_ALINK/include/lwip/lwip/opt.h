@@ -875,10 +875,6 @@
 #define LWIP_UDP                        1
 #endif
 
-#ifndef LWIP_SO_LINGER
-#define LWIP_SO_LINGER                  1
-#endif
-
 /**
  * LWIP_UDPLITE==1: Turn on UDP-Lite. (Requires LWIP_UDP)
  */

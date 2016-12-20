@@ -40,10 +40,6 @@
 
 #include "lwip/sockets.h"
 
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
-#endif
-
 #ifdef CONFIG_SSL_CERT_VERIFICATION
 /**
  * Retrieve the signature from a certificate.
@@ -79,7 +75,7 @@ int ICACHE_FLASH_ATTR x509_new(const uint8_t *cert, int *len, X509_CTX **ctx)
     X509_CTX *x509_ctx;
     BI_CTX *bi_ctx;
 
-    *ctx = (X509_CTX *)SSL_ZALLOC(sizeof(X509_CTX));
+    *ctx = (X509_CTX *)zalloc(sizeof(X509_CTX));
     x509_ctx = *ctx;
 
     /* get the certificate size */
@@ -208,10 +204,10 @@ int ICACHE_FLASH_ATTR x509_new(const uint8_t *cert, int *len, X509_CTX **ctx)
                         if (type == ASN1_CONTEXT_DNSNAME)
                         {
                             x509_ctx->subject_alt_dnsnames = (char**)
-                                    SSL_REALLOC(x509_ctx->subject_alt_dnsnames,
+                                    realloc(x509_ctx->subject_alt_dnsnames,
                                        (totalnames + 2) * sizeof(char*));
                             x509_ctx->subject_alt_dnsnames[totalnames] = 
-                                    (char*)SSL_MALLOC(dnslen + 1);
+                                    (char*)malloc(dnslen + 1);
                             x509_ctx->subject_alt_dnsnames[totalnames+1] = NULL;
                             memcpy(x509_ctx->subject_alt_dnsnames[totalnames],
                                     cert + suboffset, dnslen);
@@ -265,11 +261,11 @@ void ICACHE_FLASH_ATTR x509_free(X509_CTX *x509_ctx)
 
     for (i = 0; i < X509_NUM_DN_TYPES; i++)
     {
-    	SSL_FREE(x509_ctx->ca_cert_dn[i]);
-    	SSL_FREE(x509_ctx->cert_dn[i]);
+        free(x509_ctx->ca_cert_dn[i]);
+        free(x509_ctx->cert_dn[i]);
     }
 
-    SSL_FREE(x509_ctx->signature);
+    free(x509_ctx->signature);
 
 #ifdef CONFIG_SSL_CERT_VERIFICATION 
     if (x509_ctx->digest)
@@ -280,15 +276,15 @@ void ICACHE_FLASH_ATTR x509_free(X509_CTX *x509_ctx)
     if (x509_ctx->subject_alt_dnsnames)
     {
         for (i = 0; x509_ctx->subject_alt_dnsnames[i]; ++i)
-        	SSL_FREE(x509_ctx->subject_alt_dnsnames[i]);
+            free(x509_ctx->subject_alt_dnsnames[i]);
 
-        SSL_FREE(x509_ctx->subject_alt_dnsnames);
+        free(x509_ctx->subject_alt_dnsnames);
     }
 #endif
 
     RSA_free(x509_ctx->rsa_ctx);
     next = x509_ctx->next;
-    SSL_FREE(x509_ctx);
+    free(x509_ctx);
     x509_free(next);        /* clear the chain */
 }
 
@@ -302,7 +298,7 @@ static bigint *ICACHE_FLASH_ATTR sig_verify(BI_CTX *ctx, const uint8_t *sig, int
     int i, size;
     bigint *decrypted_bi, *dat_bi;
     bigint *bir = NULL;
-    uint8_t *block = (uint8_t *)SSL_MALLOC(sig_len);
+    uint8_t *block = (uint8_t *)malloc(sig_len);
 
     /* decrypt */
     dat_bi = bi_import(ctx, sig, sig_len);
@@ -333,7 +329,7 @@ static bigint *ICACHE_FLASH_ATTR sig_verify(BI_CTX *ctx, const uint8_t *sig, int
     /* save a few bytes of memory */
     bi_clear_cache(ctx);
 
-    SSL_FREE(block);
+    free(block);
     return bir;
 }
 
@@ -378,7 +374,7 @@ int ICACHE_FLASH_ATTR x509_verify(const CA_CERT_CTX *ca_cert_ctx, const X509_CTX
         expn = cert->rsa_ctx->e;
     }
 
-    gettimeofday(&tv, (void*)&cert->not_before);
+    gettimeofday(&tv, &cert->not_before);
 #if CONFIG_SSL_DISPLAY_MODE
     os_printf("before %u, tv_sec %u, after %u\n",cert->not_before, tv.tv_sec, cert->not_after);
 #endif

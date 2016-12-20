@@ -42,7 +42,6 @@ extern "C" {
 #endif
 
 #include "esp_common.h"
-#include "lwip/apps/time.h"
 
 #if 0
 #define ssl_printf(fmt, args...) os_printf(fmt,## args)
@@ -89,56 +88,13 @@ static __inline__ uint64 be64toh(uint64 __x) {return (((uint64)be32toh(__x & (ui
 #define htobe64(x) be64toh(x)
 #endif
 
-#ifdef MEMLEAK_DEBUG
-#define SSL_MALLOC(size) 		  ax_malloc(size, mem_debug_file, __LINE__)
-#define SSL_REALLOC(mem_ref,size) ax_realloc(mem_ref, size, mem_debug_file, __LINE__)
-#define SSL_CALLOC(element, size) ax_calloc(element, size, mem_debug_file, __LINE__)
-#define SSL_ZALLOC(size) 		  ax_zalloc(size, mem_debug_file, __LINE__)
-#define SSL_FREE(mem_ref)         ax_free(mem_ref, mem_debug_file, __LINE__)
-#else
-#define SSL_MALLOC(size) 		  malloc(size)
-#define SSL_REALLOC(mem_ref,size) realloc(mem_ref, size)
-#define SSL_CALLOC(element, size) calloc(element, size)
-#define SSL_ZALLOC(size) 		  zalloc(size)
-#define SSL_FREE(mem_ref)         free(mem_ref)
-#endif
+/* Mutexing definitions */
 
-#if 0
-#define  FILE_NAME_LENGTH 		   25
-//#define	OUTPUT_FILE 				"leak_info.txt" 	 //¡ä?¡¤??¨²¡ä?D1??¦Ì?D??¡é
-//#define	SSL_MALLOC(size)				xmalloc (size, __FILE__, __LINE__)	 //??D?¨º¦Ì??malloc?¡écalloco¨ªfree
-//#define	CALLOC(elements, size)		xcalloc (elements, size, __FILE__, __LINE__)
-//#define	FREE(mem_ref)				xfree(mem_ref)
- 
-struct _MEM_INFO  
-{
-	void 		   *address;			
-	unsigned int    size;						   	
-	char 		   file_name[FILE_NAME_LENGTH];   	
-	unsigned int    line;							
-};
+#define SSL_CTX_MUTEX_INIT(A)
+#define SSL_CTX_MUTEX_DESTROY(A)
+#define SSL_CTX_LOCK(A)
+#define SSL_CTX_UNLOCK(A)
 
-typedef struct _MEM_INFO MEM_INFO;
-
-struct _MEM_LEAK {					
-	MEM_INFO mem_info;
-	struct _MEM_LEAK * next;
-};
-
-typedef struct _MEM_LEAK MEM_LEAK;
-
-void add(MEM_INFO alloc_info);
-void erase(unsigned pos);
-void clear(void);
-
-void * xmalloc(unsigned int size, const char * file, unsigned int line);
-void * xcalloc(unsigned int elements, unsigned int size, const char * file, unsigned int line);
-void xfree(void * mem_ref);
-
-void add_mem_info (void * mem_ref, unsigned int size,  const char * file, unsigned int line);
-void remove_mem_info (void * mem_ref);
-void report_mem_leak(void);       
-#endif
 #ifdef __cplusplus
 }
 #endif

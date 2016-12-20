@@ -66,10 +66,10 @@ uart_tx_one_char(uint8 uart, uint8 TxChar)
 LOCAL void
 uart1_write_char(char c)
 {
-if(0x01 == user_uart_print_flag)
-{
-	return;
-}
+	if(0x01 == user_uart_print_flag)
+	{
+		return;
+	}
     if (c == '\n') {
         uart_tx_one_char(UART1, '\r');
         uart_tx_one_char(UART1, '\n');

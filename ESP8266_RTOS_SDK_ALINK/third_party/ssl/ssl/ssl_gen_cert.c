@@ -36,10 +36,6 @@
 #include "ssl/ssl_os_port.h"
 #include "ssl/ssl_ssl.h"
 
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
-#endif
-
 /**
  * Generate a basic X.509 certificate
  */
@@ -363,7 +359,7 @@ EXP_FUNC int ICACHE_FLASH_ATTR STDCALL ssl_x509_create(SSL_CTX *ssl_ctx, uint32_
     gen_signature_alg(buf, &offset);
     gen_signature(ssl_ctx->rsa_ctx, sha_dgst, buf, &offset);
     adjust_with_size(seq_size, seq_offset, buf, &offset);
-    *cert_data = (uint8_t *)SSL_MALLOC(offset); /* create the exact memory for it */
+    *cert_data = (uint8_t *)malloc(offset); /* create the exact memory for it */
     memcpy(*cert_data, buf, offset);
 
 error:

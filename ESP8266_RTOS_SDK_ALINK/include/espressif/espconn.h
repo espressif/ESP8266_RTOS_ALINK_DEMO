@@ -184,17 +184,6 @@ enum {
 };
 
 /**
-  * @brief     espconn initialization.
-  *
-  * @attention   Please call this API in user_init, if you need to use espconn functions.
-  *
-  * @param     null
-  *
-  * @return    null
-  */
-void espconn_init(void);
-
-/**
   * @brief     Connect to a TCP server (ESP8266 acting as TCP client).
   *
   * @attention If espconn_connect fail, returns non-0 value, there is no connection, so it
@@ -241,8 +230,6 @@ sint8 espconn_disconnect(struct espconn *espconn);
   * @return    Non-0 : error code
   *    -  ESPCONN_ARG - illegal argument, can't find the corresponding network according
   *                     to structure espconn
-  *    -  ESPCONN_INPROGRESS - the connection is still in progress, please call espconn_disconnect
-  *                     to disconnect before delete it.
   */
 sint8 espconn_delete(struct espconn *espconn);
 
