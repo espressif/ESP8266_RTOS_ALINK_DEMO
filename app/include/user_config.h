@@ -35,7 +35,7 @@ extern  int need_factory_reset ;
 #define USER_PWM_LIGHT_EN        (0)   // support alink pwm light  
 #define USER_VIRTUAL_DEV_TEST	 (1)
 
-#define USER_ALINK_GLOBAL_VER "A[Alink1.0|194b173-dirty]M[ESP8266]OS[1.3.0(68c9e7b]"
+#define USER_ALINK_GLOBAL_VER "A[Alink1.0|56d2476]M[ESP8266]OS[1.3.0(68c9e7b]"
 
 
 typedef struct virtual_dev {   // real device update this Structure parameters
