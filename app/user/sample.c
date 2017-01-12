@@ -136,7 +136,7 @@ static int ICACHE_FLASH_ATTR alink_device_post_data(alink_down_cmd_ptr down_cmd)
 {
 	alink_up_cmd up_cmd;
 	int ret = ALINK_ERR;
-	char buffer[256] = {0};
+	char buffer[256];
 //	char *buffer = NULL;
 	
 
@@ -208,7 +208,7 @@ int ICACHE_FLASH_ATTR main_dev_set_device_status_callback(alink_down_cmd_ptr dow
 		dbg_get_recv_times = 0;
 
 
-	wsf_deb("%s %d,recv_get_t[%d] \n",__FUNCTION__,__LINE__,dbg_get_recv_times);
+	wsf_deb("%s %d,recv_get_t[%d] \n",__FILE__,__LINE__,dbg_get_recv_times);
 #endif
 
 //	wsf_deb("%s %d\n%s\n",down_cmd->uuid,down_cmd->method, down_cmd->param);
@@ -295,7 +295,7 @@ int ICACHE_FLASH_ATTR main_dev_set_device_status_callback(alink_down_cmd_ptr dow
 /*服务器查询设备状态,需要设备上报状态*/
 int ICACHE_FLASH_ATTR main_dev_get_device_status_callback(alink_down_cmd_ptr down_cmd)
 {
-	wsf_deb("%s %d \n", __FUNCTION__, __LINE__);
+	wsf_deb("%s %d \n", __FILE__, __LINE__);
 	wsf_deb("%s %d\n%s\n", down_cmd->uuid, down_cmd->method, down_cmd->param);
 
 	if(!device_status_change)
@@ -399,7 +399,7 @@ int ICACHE_FLASH_ATTR alink_device_post_raw_data(void)
 		wsf_deb("[%s][%d|  Available memory:%d.\n", __FILE__, __LINE__,system_get_free_heap_size());
 
 		delta_time = system_get_time() - delta_time;
-		wsf_deb("%s %d \n delta_time = %d ", __FUNCTION__, __LINE__, delta_time / 1000);
+		wsf_deb("%s %d \n delta_time = %d ", __FILE__, __LINE__, delta_time / 1000);
 		get_device_status(rawdata, len);
 
 		ret = alink_post_device_rawdata(rawdata, len);
@@ -632,7 +632,7 @@ int ICACHE_FLASH_ATTR alink_demo()
 	alink_start(&main_dev);	//register main device here
 #endif //PASS_THROUGH
 
-	os_printf("%s %d wait time=%d \n", __FUNCTION__, __LINE__, ALINK_WAIT_FOREVER);
+	os_printf("%s %d wait time=%d \n", __FILE__, __LINE__, ALINK_WAIT_FOREVER);
 
 	#if 1
 	if(ALINK_OK == alink_wait_connect(NULL, ALINK_WAIT_FOREVER))	//wait main device login, -1 means wait forever
@@ -654,8 +654,10 @@ int ICACHE_FLASH_ATTR alink_demo()
 	#endif
 	if(need_notify_app) {
 		need_notify_app = 0;
-		uint8 macaddr[6] ={0};
-		char mac[17+1] = {0};
+		uint8 macaddr[6];
+		char mac[17+1];
+		memset(macaddr, 0, 6);
+		memset(mac, 0, 18);
 		if (wifi_get_macaddr(0, macaddr)) {
 			os_printf("macaddr=%02x:%02x:%02x:%02x:%02x:%02x\n", MAC2STR(macaddr));
 			snprintf(mac, sizeof(mac), "%02x:%02x:%02x:%02x:%02x:%02x", MAC2STR(macaddr));

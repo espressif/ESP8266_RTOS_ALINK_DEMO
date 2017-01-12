@@ -408,11 +408,11 @@ void ICACHE_FLASH_ATTR user_demo(void)
 {
 	unsigned int ret = 0;
 	os_printf("\n****************************\n");
-	os_printf("\n****************************\n");
-	os_printf("SDK version:%s\n,Alink version:%s\n,user fw ver:1.0.0(20161220@esp)\n", system_get_sdk_version(), USER_ALINK_GLOBAL_VER);
-	os_printf("esp debug version heap_size %d\n", system_get_free_heap_size());
 	os_printf("****************************\n");
-	os_printf("\n****************************\n");
+	os_printf("SDK version:%s\n,Alink version:%s\n,user fw ver:1.0.0(20170112@esp)\n", system_get_sdk_version(), USER_ALINK_GLOBAL_VER);
+	os_printf("esp debug ESP@0112version heap_size %d\n", system_get_free_heap_size());
+	os_printf("****************************\n");
+	os_printf("****************************\n");
  //   user_check_rst_info();
 #ifdef ENABLE_GPIO_KEY   // demo for smartplug class products
 	init_key();
