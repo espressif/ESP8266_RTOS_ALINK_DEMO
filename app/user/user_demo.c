@@ -410,7 +410,7 @@ void ICACHE_FLASH_ATTR user_demo(void)
 	os_printf("\n****************************\n");
 	os_printf("****************************\n");
 	os_printf("SDK version:%s\n,Alink version:%s\n,user fw ver:1.0.0(20170112@esp)\n", system_get_sdk_version(), USER_ALINK_GLOBAL_VER);
-	os_printf("esp debug ESP@0112version heap_size %d\n", system_get_free_heap_size());
+	os_printf("esp debug ESP@011219version heap_size %d\n", system_get_free_heap_size());
 	os_printf("****************************\n");
 	os_printf("****************************\n");
  //   user_check_rst_info();
