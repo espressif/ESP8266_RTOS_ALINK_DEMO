@@ -32,7 +32,7 @@ LOCAL bool init_flag = false ;
  * Parameters   :
  * Returns      :
 *******************************************************************************/
-LOCAL bool  system_upgrade_internal(struct upgrade_param *upgrade, uint8 *data, uint16 len,bool erase_flag)
+LOCAL bool  ICACHE_FLASH_ATTR system_upgrade_internal(struct upgrade_param *upgrade, uint8 *data, uint16 len,bool erase_flag)
 {
     bool ret = false;
     if(data == NULL || len == 0)
@@ -41,7 +41,7 @@ LOCAL bool  system_upgrade_internal(struct upgrade_param *upgrade, uint8 *data, 
     }
     upgrade->buffer = (uint8 *)zalloc(len + upgrade->extra);
     if(upgrade->buffer == NULL ) {
-        os_printf("%s %d %d \n",__FUNCTION__,__LINE__,system_get_free_heap_size());
+        os_printf("%s %d %d \n",__FILE__,__LINE__,system_get_free_heap_size());
 	      return false;
     }
     memcpy(upgrade->buffer, upgrade->save, upgrade->extra);
@@ -84,7 +84,7 @@ LOCAL bool  system_upgrade_internal(struct upgrade_param *upgrade, uint8 *data, 
  * Parameters   :
  * Returns      :
 *******************************************************************************/
-uint16 system_get_fw_start_sec()
+uint16 ICACHE_FLASH_ATTR system_get_fw_start_sec()
 {
 	if(upgrade != NULL) {
 		return upgrade->fw_bin_sec;
@@ -99,7 +99,7 @@ uint16 system_get_fw_start_sec()
  * Returns      :
 *******************************************************************************/
 void  
-system_upgrade_init(void)
+ICACHE_FLASH_ATTR system_upgrade_init(void)
 {
     init_flag = false;
     uint32 user_bin2_start,user_bin1_start;
@@ -133,7 +133,7 @@ system_upgrade_init(void)
  * Returns      :
 *******************************************************************************/
 bool  
-ota_write_flash(uint8 *data, uint16 len,bool erase_flag)
+ICACHE_FLASH_ATTR ota_write_flash(uint8 *data, uint16 len,bool erase_flag)
 {
     bool ret;
     if (init_flag == false) {
@@ -150,7 +150,7 @@ ota_write_flash(uint8 *data, uint16 len,bool erase_flag)
  * Returns      :
 *******************************************************************************/
 void  
-system_upgrade_recycle(void)
+ICACHE_FLASH_ATTR system_upgrade_recycle(void)
 {
     if (upgrade != NULL) {
     	free(upgrade);

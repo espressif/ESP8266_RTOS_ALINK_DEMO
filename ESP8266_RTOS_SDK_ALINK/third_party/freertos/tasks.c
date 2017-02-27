@@ -101,7 +101,11 @@ privileged Vs unprivileged linkage and placement. */
 /*
  * Defines the size, in words, of the stack allocated to the idle task.
  */
-#define tskIDLE_STACK_SIZE	176	//configMINIMAL_STACK_SIZE
+#define tskIDLE_STACK_SIZE	384
+
+#ifdef MEMLEAK_DEBUG
+static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
+#endif
 
 /*
  * Task control block.  A task control block (TCB) is allocated for each task,
@@ -1241,7 +1245,6 @@ portBASE_TYPE xReturn;
 		/* Create the idle task, storing its handle in xIdleTaskHandle so it can
 		be returned by the xTaskGetIdleTaskHandle() function. */
 		xReturn = xTaskCreate( prvIdleTask, ( signed char * ) "IDLE", tskIDLE_STACK_SIZE, ( void * ) NULL, ( tskIDLE_PRIORITY | portPRIVILEGE_BIT ), &xIdleTaskHandle ); /*lint !e961 MISRA exception, justified as it is not a redundant explicit cast to all supported compilers. */
-os_printf("idle_task_hdl : %x,prio:%d, stack:%d\n", xIdleTaskHandle,tskIDLE_PRIORITY,tskIDLE_STACK_SIZE);
 	}
 	#else
 	{
@@ -2483,7 +2486,7 @@ tskTCB *pxNewTCB;
 
 	/* Allocate space for the TCB.  Where the memory comes from depends on
 	the implementation of the port malloc function. */
-	pxNewTCB = ( tskTCB * ) pvPortMalloc( sizeof( tskTCB ) );
+	pxNewTCB = ( tskTCB * ) os_malloc( sizeof( tskTCB ) );
 
 	if( pxNewTCB != NULL )
 	{
@@ -2494,7 +2497,7 @@ tskTCB *pxNewTCB;
 		if( pxNewTCB->pxStack == NULL )
 		{
 			/* Could not allocate the stack.  Delete the allocated TCB. */
-			vPortFree( pxNewTCB );
+			os_free( pxNewTCB );
 			pxNewTCB = NULL;
 		}
 		else
@@ -2638,7 +2641,7 @@ tskTCB *pxNewTCB;
 		/* Free up the memory allocated by the scheduler for the task.  It is up to
 		the task to free any memory allocated at the application level. */
 		vPortFreeAligned( pxTCB->pxStack );
-		vPortFree( pxTCB );
+		os_free( pxTCB );
 	}
 
 #endif /* INCLUDE_vTaskDelete */
@@ -2846,7 +2849,7 @@ PortDisableInt_NoNest();
 		uxArraySize = uxCurrentNumberOfTasks;
 
 		/* Allocate an array index for each task. */
-		pxTaskStatusArray = pvPortMalloc( uxCurrentNumberOfTasks * sizeof( xTaskStatusType ) );
+		pxTaskStatusArray = os_malloc( uxCurrentNumberOfTasks * sizeof( xTaskStatusType ) );
 
 		if( pxTaskStatusArray != NULL )
 		{
@@ -2881,7 +2884,7 @@ PortDisableInt_NoNest();
 			}
 
 			/* Free the array again. */
-			vPortFree( pxTaskStatusArray );
+			os_free( pxTaskStatusArray );
 		}
 	}
 
@@ -2930,7 +2933,7 @@ PortDisableInt_NoNest();
 		uxArraySize = uxCurrentNumberOfTasks;
 
 		/* Allocate an array index for each task. */
-		pxTaskStatusArray = pvPortMalloc( uxCurrentNumberOfTasks * sizeof( xTaskStatusType ) );
+		pxTaskStatusArray = os_malloc( uxCurrentNumberOfTasks * sizeof( xTaskStatusType ) );
 
 		if( pxTaskStatusArray != NULL )
 		{
@@ -2987,7 +2990,7 @@ PortDisableInt_NoNest();
 			}
 
 			/* Free the array again. */
-			vPortFree( pxTaskStatusArray );
+			os_free( pxTaskStatusArray );
 		}
 	}
 

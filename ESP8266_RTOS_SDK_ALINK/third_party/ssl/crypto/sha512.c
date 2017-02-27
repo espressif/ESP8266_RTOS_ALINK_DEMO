@@ -45,6 +45,10 @@
 #define SIGMA4(x) (ROR64(x, 19) ^ ROR64(x, 61) ^ SHR64(x, 6))
 #define MIN(x, y) ((x) < (y) ? x : y)
  
+#ifdef MEMLEAK_DEBUG
+static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
+#endif
+
 static const uint8_t padding[128] ICACHE_RODATA_ATTR STORE_ATTR =
 {
     0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -195,7 +199,8 @@ void ICACHE_FLASH_ATTR SHA512_Final(uint8_t *digest, SHA512_CTX *ctx)
     int i;
     size_t paddingSize;
     uint64_t totalSize;
-    uint8_t *padding_ram = malloc(128);
+	
+    uint8_t *padding_ram = (uint8_t *)SSL_MALLOC(128);
 
     memcpy(padding_ram, padding, 128);
  
@@ -223,6 +228,6 @@ void ICACHE_FLASH_ATTR SHA512_Final(uint8_t *digest, SHA512_CTX *ctx)
     if (digest != NULL)
        memcpy(digest, ctx->h_dig.digest, SHA512_SIZE);
 
-    free(padding_ram);
+    SSL_FREE(padding_ram);
  }
  

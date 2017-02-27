@@ -409,8 +409,8 @@ void ICACHE_FLASH_ATTR user_demo(void)
 	unsigned int ret = 0;
 	os_printf("\n****************************\n");
 	os_printf("****************************\n");
-	os_printf("SDK version:%s\n,Alink version:%s\n,user fw ver:1.0.0(20170112@esp)\n", system_get_sdk_version(), USER_ALINK_GLOBAL_VER);
-	os_printf("esp debug ESP@011219-01version heap_size %d\n", system_get_free_heap_size());
+	os_printf("SDK version:%s\n,Alink version:%s\n,user fw ver:1.0.0(20170227@esp)\n", system_get_sdk_version(), USER_ALINK_GLOBAL_VER);
+	os_printf("esp debug ESP@0227-01version heap_size %d\n", system_get_free_heap_size());
 	os_printf("****************************\n");
 	os_printf("****************************\n");
  //   user_check_rst_info();
@@ -444,7 +444,7 @@ void ICACHE_FLASH_ATTR user_demo(void)
 #endif
 
 	
-	xTaskCreate(startdemo_task, "startdemo_task",(256*4), NULL, 2, NULL);
+	xTaskCreate(startdemo_task, "startdemo_task",(256*3+128), NULL, tskIDLE_PRIORITY+5, NULL);
 	
 #if USER_PWM_LIGHT_EN
 	user_esp_test_pwm();  // this a test ctrl pwm data, real device not need this
@@ -460,13 +460,15 @@ LOCAL uint32 totallength = 0;
 LOCAL uint32 sumlength = 0;
 extern FwFileInfo_t fwFileInfo;
 
-int upgrade_download(char *pusrdata, unsigned short length)
+int ICACHE_FLASH_ATTR upgrade_download(char *pusrdata, unsigned short length)
 {
-    char *ptr = NULL;
-    char *ptmp2 = NULL;
-    char lengthbuffer[32] ={0};
-    bool ret = false;
-    os_printf("%s %d totallength =%d length = %d \n",__FUNCTION__,__LINE__,totallength,length);
+    char *ptr;
+	char *ptmp2;
+	ptr= NULL;
+    ptmp2 = NULL;
+    bool ret;
+	ret = false;
+    os_printf("%s %d totallength =%d length = %d \n",__FILE__,__LINE__,totallength,length);
     if( (pusrdata == NULL )||length < 1) {
 	 system_upgrade_flag_set(UPGRADE_FLAG_START);
 	 sumlength = fwFileInfo.fwSize;

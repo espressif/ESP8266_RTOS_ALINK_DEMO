@@ -28,11 +28,11 @@
 #endif
 #if 0
 #define assert(val) do{\
-	if(!(val)){os_printf("[ERROR][%s##%u]\n",__FUNCTION__,__LINE__);system_restart();}\
+	if(!(val)){os_printf("[ERROR][%s##%u]\n",__FILE__,__LINE__);system_restart();}\
 }while(0)
 #else
 #define assert(val) do{\
-	if(!(val)){os_printf("[ERROR][%s##%u]\n",__FUNCTION__,__LINE__);}\
+	if(!(val)){os_printf("[ERROR][%s##%u]\n",__FILE__,__LINE__);}\
 }while(0)
 #endif
 /*

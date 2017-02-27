@@ -137,12 +137,27 @@ void ICACHE_FLASH_ATTR sniffer_wifi_promiscuous_rx(uint8 *buf, uint16 buf_len)
 			data_len = sizeof(sniffer->buf);
 		data = sniffer->buf;
 		vendor_data_callback(data, data_len);
-	} else if (buf_len == sizeof(struct RxControl)) {/* mimo, HT40, LDPC */
-		struct RxControl *rx_ctrl= (struct RxControl *)buf;
-		//aws_printf("%s mcs:%d %s\n", rx_ctrl->CWB ? "HT40" : ""/* HT20 */,
-		//		rx_ctrl->MCS,
-		//		rx_ctrl->FEC_CODING ? "LDPC" : "");
-	} else {//if (buf_len % 10 == 0) {
+	}  else if (buf_len == sizeof(struct RxControl)) {/* mimo, HT40, LDPC */
+        struct RxControl *rx_ctrl= (struct RxControl *)buf;
+        struct ht40_ctrl ht40;
+        ht40.rssi = rx_ctrl->rssi;
+        if (rx_ctrl->Aggregation)
+            ht40.length = rx_ctrl->HT_length - 4;
+        else
+            ht40.length = rx_ctrl->HT_length;
+
+        ht40.filter = rx_ctrl->Smoothing << 5
+                        | rx_ctrl->Not_Sounding << 4
+                        | rx_ctrl->Aggregation << 3
+                        | rx_ctrl->STBC << 1
+                        | rx_ctrl->FEC_CODING;
+#if 0
+        aws_printf("[@BILL]mcs:%d %s len:%d rssi:%d\n", rx_ctrl->CWB ? "HT40" : ""/* HT20 */,
+                rx_ctrl->MCS,
+                rx_ctrl->FEC_CODING ? "LDPC" : "", ht40.length, ht40.rssi);
+#endif
+        aws_80211_frame_handler((char *)&ht40, ht40.length, AWS_LINK_TYPE_HT40_CTRL, 1);
+    } else {//if (buf_len % 10 == 0)else {//if (buf_len % 10 == 0) {
 		struct sniffer_buf *sniffer = (struct sniffer_buf *)buf;
 		data = buf + sizeof(struct RxControl);
 
@@ -205,8 +220,10 @@ int vendor_broadcast_notification(char *msg, int msg_num)
 	struct sockaddr_in addr;
 	int i, ret, fd;
 
-	int buf_len = 1024;
-	char *buf = vendor_malloc(buf_len);
+	int buf_len;
+	buf_len = 1024;
+	char *buf;
+	buf = vendor_malloc(buf_len);
 
 	do {
 		fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -306,17 +323,20 @@ extern int need_notify_app;
 
 int aws_sample(void)
 {
-	char ssid[32 + 1] = {0};
-	char passwd[64 + 1] = {0};
-	char bssid[6] ={0};
-	
+	char ssid[33];
+	char passwd[65];
+	char bssid[6];
+	int ret;
 	char auth;
 	char encry;
 	char channel;
-	char macaddr[6] = {0};
-	int ret;
+	char macaddr[6];
+	memset(macaddr, 0, 6);
+	memset(passwd, 0, 65);
+	memset(ssid, 0, 33);
+	memset(bssid, 0, 6);
 	if(!wifi_get_macaddr(0,macaddr)){
-		os_printf("[dbg][%s##%u]\n",__FUNCTION__,__LINE__);
+		os_printf("[dbg][%s##%u]\n",__FILE__,__LINE__);
 	};
     snprintf(dev_mac, sizeof(dev_mac), "%02x:%02x:%02x:%02x:%02x:%02x", MAC2STR(macaddr));
 	aws_start(product_model, product_secret, dev_mac, NULL);
@@ -330,6 +350,7 @@ int aws_sample(void)
 	}
 
 	aws_printf("ssid:%s, passwd:%s\n", ssid, passwd);
+	aws_destroy();  // add for ht40
 
 	vendor_connect_ap(ssid, passwd);
 

@@ -52,6 +52,7 @@
  /home/esp8266/Share/ESP_ALINK_PRO_NEW/github-pro/ESP8266_RTOS_ALINK_DEMO/app/../ESP8266_RTOS_SDK_ALINK/include/freertos/portable.h \
  /home/esp8266/Share/ESP_ALINK_PRO_NEW/github-pro/ESP8266_RTOS_ALINK_DEMO/app/../ESP8266_RTOS_SDK_ALINK/include/freertos/portmacro.h \
  /home/esp8266/Share/ESP_ALINK_PRO_NEW/github-pro/ESP8266_RTOS_ALINK_DEMO/app/../ESP8266_RTOS_SDK_ALINK/include/espressif/esp_libc.h \
+ /home/esp8266/Share/ESP_ALINK_PRO_NEW/github-pro/ESP8266_RTOS_ALINK_DEMO/app/../ESP8266_RTOS_SDK_ALINK/include/espressif/esp8266/ets_sys.h \
  /home/esp8266/Share/ESP_ALINK_PRO_NEW/github-pro/ESP8266_RTOS_ALINK_DEMO/app/../ESP8266_RTOS_SDK_ALINK/extra_include/xtensa/xtruntime.h \
  /home/esp8266/Share/ESP_ALINK_PRO_NEW/github-pro/ESP8266_RTOS_ALINK_DEMO/app/../ESP8266_RTOS_SDK_ALINK/extra_include/xtensa/config/core.h \
  /home/esp8266/Share/ESP_ALINK_PRO_NEW/github-pro/ESP8266_RTOS_ALINK_DEMO/app/../ESP8266_RTOS_SDK_ALINK/extra_include/xtensa/hal.h \

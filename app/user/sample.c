@@ -593,10 +593,10 @@ extern int  need_factory_reset ;
 
 void ICACHE_FLASH_ATTR set_thread_stack_size(struct thread_stacksize * p_thread_stacksize)
 {
-    p_thread_stacksize->alink_main_thread_size = 0xc00;
-    p_thread_stacksize->send_work_thread_size = 0x800;
-    p_thread_stacksize->wsf_thread_size = 0x1000;
-    p_thread_stacksize->func_thread_size = 0x800;
+    p_thread_stacksize->alink_main_thread_size = 0xc00;//0xc00;
+    p_thread_stacksize->send_work_thread_size = 0x780;//0x800;
+    p_thread_stacksize->wsf_thread_size = 0xa80; //0x1000;  
+    p_thread_stacksize->func_thread_size = 0x800; //0x800;
 }
    
 int ICACHE_FLASH_ATTR alink_demo()

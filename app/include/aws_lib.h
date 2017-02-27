@@ -1,6 +1,19 @@
 #ifndef _AWS_LIB_H_
 #define _AWS_LIB_H_
+/* link type */
+enum AWS_LINK_TYPE {
+    AWS_LINK_TYPE_NONE,
+    AWS_LINK_TYPE_PRISM,
+    AWS_LINK_TYPE_80211_RADIO,
+    AWS_LINK_TYPE_80211_RADIO_AVS,
+    AWS_LINK_TYPE_HT40_CTRL,
+};
 
+struct ht40_ctrl {
+    unsigned short length;
+    unsigned char filter;
+    char rssi;
+};
 /* auth type */
 enum AWS_AUTH_TYPE {
 	AWS_AUTH_TYPE_OPEN,
@@ -25,13 +38,6 @@ enum AWS_ENC_TYPE {
 	AWS_ENC_TYPE_INVALID = 0xff,
 };
 
-/* link type */
-enum AWS_LINK_TYPE {
-	AWS_LINK_TYPE_NONE,
-	AWS_LINK_TYPE_PRISM,
-	AWS_LINK_TYPE_80211_RADIO,
-	AWS_LINK_TYPE_80211_RADIO_AVS
-};
 
 //用于打印aws配网库版本
 const char *aws_version(void);
